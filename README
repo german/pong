@@ -1,0 +1,15 @@
+Simple ping-pong browser game (using canvas/socket.io on client 
+side). Nodejs used as back-end server
+
+To start the game you should install nodejs first 
+(http://nodejs.org/#download)
+
+Then start the server: 
+$ sudo node server.js
+
+Then open two browser windows (currantly tested in Google Chrome only) 
+and point both to http://localhost:8080
+
+Move up - 'k'
+Move down - 'l'
+Start round - Spacebar

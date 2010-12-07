@@ -1,0 +1,139 @@
+<html>
+  <head>
+  	<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+  	<title>Ping pong</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="shape.js"></script>
+    <script src="ball.js"></script>  		
+  </head>
+  <body>
+  	<canvas id="main_canvas" width="500" height="500" style="border:1px solid green"></canvas>
+    <div id="score" style="float:right;text-size:24px;">0:0</div>
+
+    <script type="text/javascript" language="javascript" charset="utf-8">
+  	// <![CDATA[
+      var ctx    = document.getElementById('main_canvas').getContext('2d');
+
+      var TICK_INTERVAL  = 50;
+
+      var CANVAS_HEIGHT  = 500;
+      var CANVAS_WIDTH   = 500;
+
+      var SHAPE_WIDTH    = 20;
+      var SHAPE_HEIGHT   = 60;
+      var BALL_DIAMETER  = 3;
+      PLAYER_COLORS  = [null, '#D40000', '#07AF45']
+
+      var current_player_id;
+      window.player_shapes = [null];
+      var player_id_having_the_ball = 1; // this could vary once the ball went off the canvas / round ended
+      var BALL_X_STEP = 5, BALL_Y_STEP = 5;
+      var ball;
+
+      var timer;
+
+      window.round_started = false; // global to know whether to draw the ball near the shape at the beginning of round
+      var player_1_won_rounds = 0;
+      var player_2_won_rounds = 0;
+
+      var redraw_all = function() {
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        for(var i = 1; i < 3; i++) { 
+          player_shapes[i].draw(); 
+        }
+        ball.redraw();
+      }
+
+      var start_round = function() {
+        window.round_started = true;
+			  timer = setInterval(function() { ball.move.apply(ball) }, TICK_INTERVAL);  // in order to this.draw work in ball's move function use apply here
+        ball.initial_shot();
+      }
+
+      var init = function() {
+        
+        var current_player_shape = new Shape(ctx, current_player_id);
+        var other_player_shape = new Shape(ctx, ((current_player_id == 1) ? 2 : 1));
+        if(current_player_id == 1){
+          player_shapes.push(current_player_shape);
+          player_shapes.push(other_player_shape);
+        } else {
+          player_shapes.push(other_player_shape);
+          player_shapes.push(current_player_shape);
+        }
+
+        ball = new Ball(ctx, player_id_having_the_ball, player_shapes[player_id_having_the_ball]);
+        player_shapes[player_id_having_the_ball].set_ball(ball);        
+
+        current_player_shape.draw();
+        other_player_shape.draw();
+                
+			  window.onkeypress = function(e) {
+				  if ( e.keyCode == 107 ) {
+				    if(current_player_shape.can_move({to: 'top'})) {
+						  current_player_shape.move({to: 'top'});
+              redraw_all();              
+		          socket.send({type: 'move', player_id: current_player_id, direction: "top"});
+						}
+					} else if ( e.keyCode == 108 ) {
+						if(current_player_shape.can_move({to: 'bottom'})) {
+						  current_player_shape.move({to: 'bottom'});
+              redraw_all();          
+		          socket.send({type: 'move', player_id: current_player_id, direction: "bottom"});
+						}
+					} else if (e.keyCode == 32) { // if spacebar pressed - begin round
+            if(current_player_id == player_id_having_the_ball) {             
+              start_round();
+							socket.send({type: 'round_started'});
+            }
+          }
+        }
+			}
+
+      var socket = new io.Socket(null, {port: 8080, rememberTransport: false});
+
+      socket.connect();
+
+      // messages could be 4 types
+      // 1. - 1st/2nd player connected
+      // 2. - round just began, synchronive initial position of the ball
+      // 3. - player n moved up/down per 1 tick
+      // 4. - ball went out of the field / who loose / new round
+      socket.on('message', function(obj){
+        console.log(obj);
+        switch(obj.type) {
+          // if this is 1st player then draw ball near him
+          case 'player_connected':
+            current_player_id = obj.player_id;
+            init();
+            // and wait till 2nd user connects to the game
+            break;                    
+          case 'move':            
+            if(player_shapes[obj.player_id].can_move({to: obj.direction})) {
+						  player_shapes[obj.player_id].move({to: obj.direction});
+              redraw_all();
+            }
+            break;
+          case 'round_started':
+            start_round();          
+            break;
+          case 'end_of_the_round':
+            player_id_having_the_ball = obj.player_id_having_the_ball;
+            if(obj.player_won == 1) {
+              player_1_won_rounds += 1;
+            } else {
+              player_2_won_rounds += 1;
+            }
+
+            document.getElementById('score').innerHTML = player_1_won_rounds + ':' + player_2_won_rounds;
+            
+            ball = new Ball(ctx, player_id_having_the_ball, player_shapes[player_id_having_the_ball]);
+            player_shapes[player_id_having_the_ball].set_ball(ball);
+            redraw_all();
+            break;
+        }        
+      });
+  	// ]]>
+  	</script>
+  </body>
+</html>
