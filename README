@@ -10,6 +10,5 @@ $ sudo node server.js
 Then open two browser windows (currantly tested in Google Chrome only) 
 and point both to http://localhost:8080
 
-Move up - 'k'
-Move down - 'l'
+buttons Up/Down - move up/down
 Start round - Spacebar

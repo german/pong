@@ -58,6 +58,7 @@ io.on('connection', function(client){
   } else {
     second_player_connected = true;
     client.send({type: 'player_connected', player_id: 2, buffer: buffer }); // when second player has connected, 1st player could had moved up or down his default position, so show him right
+    client.broadcast({ type: 'round_could_be_started' });
     console.log('2nd player connected');
   }
 

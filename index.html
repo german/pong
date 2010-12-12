@@ -30,8 +30,9 @@
       var BALL_X_STEP = 5, BALL_Y_STEP = 5;
       var ball;
 
-      var timer;
+      var ball_movement_timer, shape_movement_timer;
 
+      window.round_could_be_started = false; //player 1 couldn't start if player 2 hadn't been connected
       window.round_started = false; // global to know whether to draw the ball near the shape at the beginning of round
       var player_1_won_rounds = 0;
       var player_2_won_rounds = 0;
@@ -46,7 +47,7 @@
 
       var start_round = function() {
         window.round_started = true;
-			  timer = setInterval(function() { ball.move.apply(ball) }, TICK_INTERVAL);  // in order to this.draw work in ball's move function use apply here
+			  ball_movement_timer = setInterval(function() { ball.move.apply(ball) }, TICK_INTERVAL);  // in order to this.draw work in ball's move() function we use apply here
         ball.initial_shot();
       }
 
@@ -67,25 +68,45 @@
 
         current_player_shape.draw();
         other_player_shape.draw();
-                
-			  window.onkeypress = function(e) {
-				  if ( e.keyCode == 107 ) {
-				    if(current_player_shape.can_move({to: 'top'})) {
-						  current_player_shape.move({to: 'top'});
-              redraw_all();              
-		          socket.send({type: 'move', player_id: current_player_id, direction: "top"});
-						}
-					} else if ( e.keyCode == 108 ) {
-						if(current_player_shape.can_move({to: 'bottom'})) {
-						  current_player_shape.move({to: 'bottom'});
-              redraw_all();          
-		          socket.send({type: 'move', player_id: current_player_id, direction: "bottom"});
-						}
+
+        // using here workaround with 38,40 pseudo-ASCII codes (button-up/button-down) to move the shape
+        // these buttons generate only onkeydown/onkeyup events (which occur only once) so user should
+        // push the button many times in order to constantly move it (one step at a time - really SLOW)
+        // the keypressed event (which could handle continiously pressed buttons) doesn't react on special buttons
+        // so I'd rather just start a timer with shape.move() function on 'onkeydown' event and clear it on 'onkeyup'
+        // (explanation about a mess with keypress/up/down events could be found here: http://unixpapa.com/js/key.html)
+			  window.onkeydown = function(e) {
+				  if ( e.keyCode == 38 && shape_movement_timer == null) {
+            shape_movement_timer = setInterval(function() {
+				      if(current_player_shape.can_move({to: 'top'})) {
+						    current_player_shape.move({to: 'top'});
+                redraw_all();
+		            socket.send({type: 'move', player_id: current_player_id, direction: "top"});
+						  }
+            }, TICK_INTERVAL);
+					} else if ( e.keyCode == 40 && shape_movement_timer == null) {
+            shape_movement_timer = setInterval(function() {
+							if(current_player_shape.can_move({to: 'bottom'})) {
+								current_player_shape.move({to: 'bottom'});
+		            redraw_all();
+				        socket.send({type: 'move', player_id: current_player_id, direction: "bottom"});
+							}
+            }, TICK_INTERVAL);
 					} else if (e.keyCode == 32) { // if spacebar pressed - begin round
-            if(current_player_id == player_id_having_the_ball) {             
+            if(current_player_id == player_id_having_the_ball && round_could_be_started) {
               start_round();
 							socket.send({type: 'round_started'});
             }
+          }
+        }
+
+        window.onkeyup = function(e) {
+          if ( e.keyCode == 38 && shape_movement_timer != null) {
+            clearInterval(shape_movement_timer);
+            shape_movement_timer = null;
+          } else if ( e.keyCode == 40 && shape_movement_timer != null) {
+            clearInterval(shape_movement_timer);
+            shape_movement_timer = null;
           }
         }
 			}
@@ -94,11 +115,12 @@
 
       socket.connect();
 
-      // messages could be 4 types
+      // messages could be 5 types
       // 1. - 1st/2nd player connected
-      // 2. - round just began, synchronive initial position of the ball
-      // 3. - player n moved up/down per 1 tick
-      // 4. - ball went out of the field / who loose / new round
+      // 2. - round could be started (so player 1 couldn't start if player 2 hadn't connected yet)
+      // 3. - round just began, synchronive initial position of the ball
+      // 4. - player n moved up/down per 1 tick
+      // 5. - ball went out of the field / who loose / new round
       socket.on('message', function(obj){
         console.log(obj);
         switch(obj.type) {
@@ -113,6 +135,9 @@
 						  player_shapes[obj.player_id].move({to: obj.direction});
               redraw_all();
             }
+            break;
+          case 'round_could_be_started':
+            round_could_be_started = true;
             break;
           case 'round_started':
             start_round();          
@@ -130,6 +155,7 @@
             ball = new Ball(ctx, player_id_having_the_ball, player_shapes[player_id_having_the_ball]);
             player_shapes[player_id_having_the_ball].set_ball(ball);
             redraw_all();
+            round_could_be_started = true;
             break;
         }        
       });
