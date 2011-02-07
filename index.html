@@ -5,6 +5,10 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="shape.js"></script>
     <script src="ball.js"></script>  		
+
+    <script src="jquery.js" type="text/javascript"></script>
+    <link href="/facebox/facebox.css" media="screen" rel="stylesheet" type="text/css"/>
+    <script src="/facebox/facebox.js" type="text/javascript"></script>
   </head>
   <body>
   	<canvas id="main_canvas" width="500" height="500" style="border:1px solid green"></canvas>
@@ -122,7 +126,7 @@
       // 4. - player n moved up/down per 1 tick
       // 5. - ball went out of the field / who loose / new round
       socket.on('message', function(obj){
-        console.log(obj);
+        //console.log(obj);
         switch(obj.type) {
           // if this is 1st player then draw ball near him
           case 'player_connected':
@@ -138,6 +142,7 @@
             break;
           case 'round_could_be_started':
             round_could_be_started = true;
+            jQuery.facebox('Round could be started: please press spacebar to start!');
             break;
           case 'round_started':
             start_round();          

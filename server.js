@@ -11,7 +11,7 @@ var http = require('http')
     
 server = http.createServer(function(req, res){
   // your normal server code
-  var path = url.parse(req.url).pathname;
+  var path = url.parse(req.url).pathname, content_type;
   switch (path){
     case '/':
       res.writeHead(200, {'Content-Type': 'text/html'});
@@ -21,10 +21,24 @@ server = http.createServer(function(req, res){
       
     case '/ball.js':
     case '/shape.js':
+    case '/jquery.js':
+    case '/facebox/facebox.js':
+    case '/facebox/closelabel.png':
+    case '/facebox/facebox.css':
     case '/index.html':
+      if(path.match(/\.js$/) != null) {
+        content_type = 'text/javascript';
+      } else if(path.match(/\.css$/) != null) {
+        content_type = 'text/css';
+      } else if(path.match(/\.png$/) != null) {
+        content_type = 'image/png';
+      } else {
+        content_type = 'text/html';
+      }
+
       fs.readFile(__dirname + path, function(err, data){
         if (err) return send404(res);
-        res.writeHead(200, {'Content-Type': (path == 'ball.js' || path == 'shape.js') ? 'text/javascript' : 'text/html'})
+        res.writeHead(200, {'Content-Type': content_type})
         res.write(data, 'utf8');
         res.end();
       });
