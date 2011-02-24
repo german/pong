@@ -85,7 +85,13 @@
 				      if(current_player_shape.can_move({to: 'top'})) {
 						    current_player_shape.move({to: 'top'});
                 redraw_all();
-		            socket.send({type: 'move', player_id: current_player_id, direction: "top", room_id: window.room_id});
+                var info = {type: 'move', player_id: current_player_id, direction: "top", room_id: window.room_id};
+                if(current_player_id == 1) {
+                  // store info on player_1's ball position (no overhead since we already send the message) to sync then
+                  info['ball_x'] = ball.current_x;
+                  info['ball_y'] = ball.current_y;
+                }
+		            socket.send(info);
 						  }
             }, TICK_INTERVAL);
 					} else if ( e.keyCode == 40 && shape_movement_timer == null) {
@@ -93,7 +99,13 @@
 							if(current_player_shape.can_move({to: 'bottom'})) {
 								current_player_shape.move({to: 'bottom'});
 		            redraw_all();
-				        socket.send({type: 'move', player_id: current_player_id, direction: "bottom", room_id: window.room_id});
+                var info = {type: 'move', player_id: current_player_id, direction: "bottom", room_id: window.room_id};
+                if(current_player_id == 1) {
+                  // store info on player_1's ball position (no overhead since we already send the message) to sync then
+                  info['ball_x'] = ball.current_x;
+                  info['ball_y'] = ball.current_y;
+                }
+				        socket.send(info);
 							}
             }, TICK_INTERVAL);
 					} else if (e.keyCode == 32) { // if spacebar pressed - begin round
@@ -157,8 +169,14 @@
             // and wait till 2nd user connects to the game
             break;                    
           case 'move':
-            if(obj.room_id == window.room_id && player_shapes[obj.player_id].can_move({to: obj.direction})) {
-						  player_shapes[obj.player_id].move({to: obj.direction});
+						if(obj.room_id == window.room_id && player_shapes[obj.player_id].can_move({to: obj.direction})) {
+							player_shapes[obj.player_id].move({to: obj.direction});
+              // player_1 is primary player so ball's position is synced to him
+              if(current_player_id != 1 && obj.ball_x && obj.ball_y) {
+                // second player just corrects position of his ball from player_1's one
+                ball.current_x = obj.ball_x;
+                ball.current_y = obj.ball_y;
+              }
               redraw_all();
             }
             break;
