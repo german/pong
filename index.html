@@ -156,33 +156,39 @@
             init();
             // and wait till 2nd user connects to the game
             break;                    
-          case 'move':            
-            if(player_shapes[obj.player_id].can_move({to: obj.direction})) {
+          case 'move':
+            if(obj.room_id == window.room_id && player_shapes[obj.player_id].can_move({to: obj.direction})) {
 						  player_shapes[obj.player_id].move({to: obj.direction});
               redraw_all();
             }
             break;
           case 'round_could_be_started':
-            round_could_be_started = true;
-            jQuery.facebox('Round could be started: please press spacebar to start!');
+            if(obj.room_id == window.room_id) {
+              round_could_be_started = true;
+              jQuery.facebox('Round could be started: please press spacebar to start!');
+            }
             break;
           case 'round_started':
-            start_round();          
+            if(obj.room_id == window.room_id) {
+              start_round();
+            }
             break;
           case 'end_of_the_round':
-            player_id_having_the_ball = obj.player_id_having_the_ball;
-            if(obj.player_won == 1) {
-              player_1_won_rounds += 1;
-            } else {
-              player_2_won_rounds += 1;
-            }
+            if(obj.room_id == window.room_id) {
+              player_id_having_the_ball = obj.player_id_having_the_ball;
+              if(obj.player_won == 1) {
+                player_1_won_rounds += 1;
+              } else {
+                player_2_won_rounds += 1;
+              }
 
-            document.getElementById('score').innerHTML = player_1_won_rounds + ':' + player_2_won_rounds;
-            
-            ball = new Ball(ctx, player_id_having_the_ball, player_shapes[player_id_having_the_ball]);
-            player_shapes[player_id_having_the_ball].set_ball(ball);
-            redraw_all();
-            round_could_be_started = true;
+              document.getElementById('score').innerHTML = player_1_won_rounds + ':' + player_2_won_rounds;
+
+              ball = new Ball(ctx, player_id_having_the_ball, player_shapes[player_id_having_the_ball]);
+              player_shapes[player_id_having_the_ball].set_ball(ball);
+              redraw_all();
+              round_could_be_started = true;
+            }
             break;
         }        
       });
