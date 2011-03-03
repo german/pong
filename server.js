@@ -11,7 +11,7 @@ server = http.createServer(function(req, res){
   switch (path){
     case '/':
       res.writeHead(200, {'Content-Type': 'text/html'});
-      res.write('<h1><a href="/index.html">Play ping-pong</a></h1>');
+      res.write('<h1><a href="index.html">Play ping-pong</a></h1>');
       res.end();
       break;
     case '/ping':

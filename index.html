@@ -2,13 +2,13 @@
   <head>
   	<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
   	<title>Ping pong</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="socket.io/socket.io.js"></script>
     <script src="shape.js"></script>
     <script src="ball.js"></script>  		
 
     <script src="jquery.js" type="text/javascript"></script>
-    <link href="/facebox/facebox.css" media="screen" rel="stylesheet" type="text/css"/>
-    <script src="/facebox/facebox.js" type="text/javascript"></script>
+    <link href="facebox/facebox.css" media="screen" rel="stylesheet" type="text/css"/>
+    <script src="facebox/facebox.js" type="text/javascript"></script>
   </head>
   <body>
   	<canvas id="main_canvas" width="500" height="500" style="border:1px solid green"></canvas>
@@ -17,6 +17,8 @@
 
     <script type="text/javascript" language="javascript" charset="utf-8">
   	// <![CDATA[
+      $.facebox.settings.closeImage = 'facebox/closelabel.png';
+      $.facebox.settings.loadingImage = 'facebox/loading.gif';
       var ctx    = document.getElementById('main_canvas').getContext('2d');
 
       var TICK_INTERVAL  = 50;
@@ -177,15 +179,15 @@
             for(var i = 0; i < obj.number_of_rooms; i++) {
               switch(obj.rooms[i].number_of_connected_players) {
                 case 0:
-                  img_for_room = '<img src="/images/green_dot.png" width="12" height="12" alt="Available"/ >';
+                  img_for_room = '<img src="images/green_dot.png" width="12" height="12" alt="Available"/ >';
                   is_room_disabled_for_select = ''
                   break;
                 case 1:
-                  img_for_room = '<img src="/images/yellow_dot.png" width="12" height="11" alt="Available"/ >';
+                  img_for_room = '<img src="images/yellow_dot.png" width="12" height="11" alt="Available"/ >';
                   is_room_disabled_for_select = ''
                   break;
                 case 2:
-                  img_for_room = '<img src="/images/red_dot.png" width="12" height="11" alt="Full"/ >';
+                  img_for_room = '<img src="images/red_dot.png" width="12" height="11" alt="Full"/ >';
                   is_room_disabled_for_select = 'disabled';
                   break;
               }
@@ -235,7 +237,7 @@
       var retryConnectOnFailure = function(retryInMilliseconds) {
         setTimeout(function() {
           if (!connected) {
-            jQuery.get('/ping', function(data) { connected = true; });
+            jQuery.get('ping', function(data) { connected = true; });
             retryConnectOnFailure(retryInMilliseconds);
           }
         }, retryInMilliseconds);
