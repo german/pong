@@ -15,6 +15,10 @@ function Ball(context, player_id_that_has_ball, shape) {
   previous_x = current_x;
   previous_y = current_y;
 
+  this.get_coordinates = function() {
+    return {ball_x: current_x, ball_y: current_y};
+  }
+
   this.redraw = function() {
     if(!window.round_started) {
       this.draw_initial();
@@ -62,11 +66,10 @@ function Ball(context, player_id_that_has_ball, shape) {
     }
 
     if(current_x > CANVAS_WIDTH || current_x < 0 ) {
-      window.round_started = false;
-      window.round_could_be_started = false;
-      current_x > CANVAS_WIDTH ? jQuery.facebox('Player 1 won!') : jQuery.facebox('Player 2 won!');
-      clearInterval(window.ball_movement_timer);
-      socket.send({type: "end_of_the_round", player_won: (current_x > CANVAS_WIDTH ? 1 : 2), room_id: window.room_id});
+      var player_won = (current_x > CANVAS_WIDTH) ? 1 : 2;
+      window.player_id_having_the_ball = (player_won == 1) ? 2 : 1;
+      finish_round(player_won);
+      socket.send({type: "end_of_the_round", player_won: player_won, room_id: window.room_id});
     }
 
     this.redraw();

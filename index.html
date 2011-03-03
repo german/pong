@@ -12,6 +12,7 @@
   </head>
   <body>
   	<canvas id="main_canvas" width="500" height="500" style="border:1px solid green"></canvas>
+    <div id="log" style="color:red;font-weight:bold;font-size:16px;"></div>
     <div id="score" style="float:right;text-size:24px;">0:0</div>
 
     <script type="text/javascript" language="javascript" charset="utf-8">
@@ -34,7 +35,7 @@
       var BALL_X_STEP = 5, BALL_Y_STEP = 5;
       var ball;
 
-      var ball_movement_timer, shape_movement_timer;
+      window.ball_movement_timer = null, window.shape_movement_timer = null;
 
       window.round_could_be_started = false; //player 1 couldn't start if player 2 hadn't been connected
       window.round_started = false; // global to know whether to draw the ball near the shape at the beginning of round
@@ -51,8 +52,29 @@
 
       var start_round = function() {
         window.round_started = true;
+        clearInterval(ball_movement_timer);
 			  ball_movement_timer = setInterval(function() { ball.move.apply(ball) }, TICK_INTERVAL);  // in order to this.draw work in ball's move() function we use apply here
         ball.initial_shot();
+      }
+
+      var finish_round = function(player_won) {
+        jQuery.facebox('Player ' + player_won + ' won!');
+
+        clearInterval(window.ball_movement_timer);
+        ball_movement_timer = null;
+        round_started = false;
+        round_could_be_started = true;
+
+        if(player_won == 1) {
+          player_1_won_rounds += 1;
+        } else {
+          player_2_won_rounds += 1;
+        }
+
+        document.getElementById('score').innerHTML = player_1_won_rounds + ':' + player_2_won_rounds;
+        ball = new Ball(ctx, window.player_id_having_the_ball, player_shapes[window.player_id_having_the_ball]);
+        player_shapes[window.player_id_having_the_ball].set_ball(ball);
+        redraw_all();
       }
 
       var init = function() {
@@ -88,8 +110,9 @@
                 var info = {type: 'move', player_id: current_player_id, direction: "top", room_id: window.room_id};
                 if(current_player_id == 1) {
                   // store info on player_1's ball position (no overhead since we already send the message) to sync then
-                  info['ball_x'] = ball.current_x;
-                  info['ball_y'] = ball.current_y;
+                  var coords = ball.get_coordinates();
+                  info['ball_x'] = coords.ball_x;
+                  info['ball_y'] = coords.ball_y;
                 }
 		            socket.send(info);
 						  }
@@ -102,8 +125,9 @@
                 var info = {type: 'move', player_id: current_player_id, direction: "bottom", room_id: window.room_id};
                 if(current_player_id == 1) {
                   // store info on player_1's ball position (no overhead since we already send the message) to sync then
-                  info['ball_x'] = ball.current_x;
-                  info['ball_y'] = ball.current_y;
+                  var coords = ball.get_coordinates();
+                  info['ball_x'] = coords.ball_x;
+                  info['ball_y'] = coords.ball_y;
                 }
 				        socket.send(info);
 							}
@@ -129,8 +153,17 @@
 
       var socket = new io.Socket(null, {port: 8080, rememberTransport: false});
 
-      socket.connect();
+			var connected = false;
+			const RETRY_INTERVAL = 1000;
+			var reconnect_timeout;
 
+			socket.on('connect', function() {
+				connected = true;
+				clearTimeout(reconnect_timeout);
+			});
+
+      socket.connect();
+//retryConnectOnFailure(RETRY_INTERVAL);
       // messages could be 5 types
       // 1. - 1st/2nd player connected
       // 2. - round could be started (so player 1 couldn't start if player 2 hadn't connected yet)
@@ -138,7 +171,6 @@
       // 4. - player n moved up/down per 1 tick
       // 5. - ball went out of the field / who loose / new round
       socket.on('message', function(obj){
-        console.log(obj);
         switch(obj.type) {
           case 'list_of_rooms':
             var img_for_room, is_room_disabled_for_select = '';
@@ -193,23 +225,28 @@
             break;
           case 'end_of_the_round':
             if(obj.room_id == window.room_id) {
-              player_id_having_the_ball = obj.player_id_having_the_ball;
-              if(obj.player_won == 1) {
-                player_1_won_rounds += 1;
-              } else {
-                player_2_won_rounds += 1;
-              }
-
-              document.getElementById('score').innerHTML = player_1_won_rounds + ':' + player_2_won_rounds;
-
-              ball = new Ball(ctx, player_id_having_the_ball, player_shapes[player_id_having_the_ball]);
-              player_shapes[player_id_having_the_ball].set_ball(ball);
-              redraw_all();
-              round_could_be_started = true;
+              window.player_id_having_the_ball = obj.player_id_having_the_ball;
+              finish_round(obj.player_won);
             }
             break;
         }        
       });
+
+      var retryConnectOnFailure = function(retryInMilliseconds) {
+        setTimeout(function() {
+          if (!connected) {
+            jQuery.get('/ping', function(data) { connected = true; });
+            retryConnectOnFailure(retryInMilliseconds);
+          }
+        }, retryInMilliseconds);
+      };
+
+      socket.on('disconnect', function() {
+				connected = false;
+				console.log('disconnected');
+				jQuery('#log').html("<b>Disconnected! Trying to automatically to reconnect in " + RETRY_INTERVAL/1000 + " seconds.</b>");
+				retryConnectOnFailure(RETRY_INTERVAL);
+			});
   	// ]]>
   	</script>
 

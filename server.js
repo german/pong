@@ -14,7 +14,11 @@ server = http.createServer(function(req, res){
       res.write('<h1><a href="/index.html">Play ping-pong</a></h1>');
       res.end();
       break;
-      
+    case '/ping':
+      res.writeHead(200, {'Content-Type': 'text/html'});
+      res.write('pong', 'utf8');
+      res.end();
+      break;
     case '/ball.js':
     case '/shape.js':
     case '/jquery.js':
