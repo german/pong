@@ -20,9 +20,9 @@
 		var self = this;
 		this._xhr = this._request('', 'GET', true);
 		this._xhr.onreadystatechange = function(){
-			if (self._xhr.readyState == 3) self._onData(self._xhr.responseText);
+			if (self._xhr.readyState == 4) self._onData(self._xhr.responseText);
 		};
-		this._xhr.send();
+		this._xhr.send(null);
 	};
 	
 	XHRMultipart.check = function(){

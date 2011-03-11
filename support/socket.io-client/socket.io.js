@@ -1,4 +1,4 @@
-/** Socket.IO 0.7pre - Built with build.js */
+/** Socket.IO 0.6.2 - Built with build.js */
 /**
  * Socket.IO client
  * 
@@ -8,12 +8,12 @@
  */
 
 this.io = {
-	version: '0.7pre',
+	version: '0.6.2',
 	
 	setPath: function(path){
 		if (window.console && console.error) console.error('io.setPath will be removed. Please set the variable WEB_SOCKET_SWF_LOCATION pointing to WebSocketMain.swf');
 		this.path = /\/$/.test(path) ? path : path + '/';
-		WEB_SOCKET_SWF_LOCATION = path + 'lib/vendor/web-socket-js/WebSocketMain.swf';
+    WEB_SOCKET_SWF_LOCATION = path + 'lib/vendor/web-socket-js/WebSocketMain.swf';
 	}
 };
 
@@ -21,7 +21,8 @@ if ('jQuery' in this) jQuery.io = this.io;
 
 if (typeof window != 'undefined'){
   // WEB_SOCKET_SWF_LOCATION = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//cdn.socket.io/' + this.io.version + '/WebSocketMain.swf';
-  WEB_SOCKET_SWF_LOCATION = '/socket.io/lib/vendor/web-socket-js/WebSocketMain.swf';
+  if (typeof WEB_SOCKET_SWF_LOCATION === 'undefined')
+    WEB_SOCKET_SWF_LOCATION = '/socket.io/lib/vendor/web-socket-js/WebSocketMain.swf';
 }
 
 /**
@@ -41,7 +42,7 @@ if (typeof window != 'undefined'){
 		ios: false,
 
 		load: function(fn){
-			if (document.readyState == 'complete' || _pageLoaded) return fn();
+			if (/loaded|complete/.test(document.readyState) || _pageLoaded) return fn();
 			if ('attachEvent' in window){
 				window.attachEvent('onload', fn);
 			} else {
@@ -84,238 +85,6 @@ if (typeof window != 'undefined'){
 	});
 
 })();
-/**
- * Socket.IO client
- * 
- * @author Guillermo Rauch <guillermo@learnboost.com>
- * @license The MIT license.
- * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
- */
-
-io.data = {};
-
-/**
- * Data decoder class
- *
- * @api public
- */
-
-io.data.Decoder = function(){
-  this.reset();
-  this.buffer = '';
-  this.events = {};
-};
-
-io.data.Decoder.prototype = {
-
-  /**
-   * Add data to the buffer for parsing
-   *
-   * @param {String} data
-   * @api public
-   */
-  add: function(data){
-    this.buffer += data;
-    this.parse();
-  },
-
-  /**
-   * Parse the current buffer
-   *
-   * @api private
-   */
-  parse: function(){
-    for (var l = this.buffer.length; this.i < l; this.i++){
-      var chr = this.buffer[this.i];
-      if (this.type === undefined){
-        if (chr == ':') return this.error('Data type not specified');
-        this.type = '' + chr;
-        continue;
-      }
-      if (this.length === undefined && chr == ':'){
-        this.length = '';
-        continue;
-      }
-      if (this.data === undefined){
-        if (chr != ':'){
-          this.length += chr;
-        } else { 
-          if (this.length.length === 0)
-            return this.error('Data length not specified');
-          this.length = Number(this.length);
-          this.data = '';
-        }
-        continue;
-      }
-      if (this.data.length === this.length){
-        if (chr == ','){
-          this.emit('data', this.type, this.data);
-          this.buffer = this.buffer.substr(this.i + 1);
-          this.reset();
-          return this.parse();
-        } else {
-          return this.error('Termination character "," expected');
-        }
-      } else {
-        this.data += chr;
-      }
-    }
-  },
-
-  /**
-   * Reset the parser state
-   *
-   * @api private
-   */
-
-  reset: function(){
-    this.i = 0;
-    this.type = this.data = this.length = undefined;
-  },
-
-  /**
-   * Error handling functions
-   *
-   * @param {String} reason to report
-   * @api private
-   */
-
-  error: function(reason){
-    this.reset();
-    this.emit('error', reason);
-  },
-
-  /**
-   * Emits an event
-   *
-   * @param {String} ev name
-   * @api public
-   */
-
-  emit: function(ev){
-    if (!(ev in this.events))
-      return this;
-    for (var i = 0, l = this.events[ev].length; i < l; i++)
-      if (this.events[ev][i])
-        this.events[ev][i].apply(this, Array.prototype.slice.call(arguments).slice(1));
-    return this;
-  },
-
-  /**
-   * Adds an event listener
-   *
-   * @param {String} ev name
-   * @param {Function} callback
-   * @api public
-   */
-
-  on: function(ev, fn){
-    if (!(ev in this.events))
-      this.events[ev] = [];
-    this.events[ev].push(fn);
-    return this;
-  },
-
-  /**
-   * Removes an event listener
-   *
-   * @param {String} ev name
-   * @param {Function} callback
-   * @api public
-   */
-
-  removeListener: function(ev, fn){
-    if (!(ev in this.events))
-      return this;
-    for (var i = 0, l = this.events[ev].length; i < l; i++)
-      if (this.events[ev][i] == fn)
-        this.events[ev].splice(i, 1);
-    return this;
-  }
-
-};
-
-/**
- * Encode function
- * 
- * Examples:
- *      encode([3, 'Message of type 3']);
- *      encode([[1, 'Message of type 1], [2, 'Message of type 2]]);
- * 
- * @param {Array} list of messages
- * @api public
- */
-
-io.data.encode = function(messages){
-  messages = io.util.isArray(messages[0]) ? messages : [messages];
-  var ret = '';
-  for (var i = 0, str; i < messages.length; i++){
-   str = String(messages[i][1]);
-   if (str === undefined || str === null) str = '';
-   ret += messages[i][0] + ':' + str.length + ':' + str + ',';
-  }
-  return ret;
-};
-
-/**
- * Encode message function
- *
- * @param {String} message
- * @param {Object} annotations
- * @api public
- */
-
-io.data.encodeMessage = function(msg, annotations){
-  var data = ''
-    , anns = annotations || {};
-  for (var k in anns){
-    v = anns[k];
-    data += k + (v !== null && v !== undefined ? ':' + v : '') + "\n";
-  }
-  data += ':' + (msg === undefined || msg === null ? '' : msg);
-  return data;
-};
-
-/**
- * Decode message function
- *
- * @param {String} message
- * @api public
- */
-
-io.data.decodeMessage = function(msg){
-  var anns = {}
-    , data;
-  for (var i = 0, chr, key, value, l = msg.length; i < l; i++){
-    chr = msg[i];
-    if (i === 0 && chr === ':'){
-      data = msg.substr(1);
-      break;
-    }
-    if (key == null && value == null && chr == ':'){
-      data = msg.substr(i + 1);
-      break;
-    }
-    if (chr === "\n"){
-      anns[key] = value;
-      key = value = undefined;
-      continue;
-    }
-    if (key === undefined){
-      key = chr;
-      continue;
-    }
-    if (value === undefined && chr == ':'){
-      value = '';
-      continue;
-    }
-    if (value !== undefined)
-      value += chr;
-    else
-      key += chr;
-  }
-  return [data, anns];
-};
 
 /**
  * Socket.IO client
@@ -329,21 +98,30 @@ io.data.decodeMessage = function(msg){
 
 (function(){
 	
+	var frame = '~m~',
+	
+	stringify = function(message){
+		if (Object.prototype.toString.call(message) == '[object Object]'){
+			if (!('JSON' in window)){
+				if ('console' in window && console.error) console.error('Trying to encode as JSON, but JSON.stringify is missing.');
+				return '{ "$error": "Invalid message" }';
+			}
+			return '~j~' + JSON.stringify(message);
+		} else {
+			return String(message);
+		}
+	};
+	
 	Transport = io.Transport = function(base, options){
-    var self = this;
 		this.base = base;
 		this.options = {
 			timeout: 15000 // based on heartbeat interval default
 		};
 		io.util.merge(this.options, options);
-    this._decoder = new io.data.Decoder();
-    this._decoder.on('data', function(type, message){
-      self._onMessage(type, message);
-    });
 	};
 
-	Transport.prototype.write = function(){
-		throw new Error('Missing write() implementation');
+	Transport.prototype.send = function(){
+		throw new Error('Missing send() implementation');
 	};
 
 	Transport.prototype.connect = function(){
@@ -354,9 +132,46 @@ io.data.decodeMessage = function(msg){
 		throw new Error('Missing disconnect() implementation');
 	};
 	
+	Transport.prototype._encode = function(messages){
+		var ret = '', message,
+				messages = io.util.isArray(messages) ? messages : [messages];
+		for (var i = 0, l = messages.length; i < l; i++){
+			message = messages[i] === null || messages[i] === undefined ? '' : stringify(messages[i]);
+			ret += frame + message.length + frame + message;
+		}
+		return ret;
+	};
+	
+	Transport.prototype._decode = function(data){
+		var messages = [], number, n;
+		do {
+			if (data.substr(0, 3) !== frame) return messages;
+			data = data.substr(3);
+			number = '', n = '';
+			for (var i = 0, l = data.length; i < l; i++){
+				n = Number(data.substr(i, 1));
+				if (data.substr(i, 1) == n){
+					number += n;
+				} else {	
+					data = data.substr(number.length + frame.length);
+					number = Number(number);
+					break;
+				} 
+			}
+			messages.push(data.substr(0, number)); // here
+			data = data.substr(number);
+		} while(data !== '');
+		return messages;
+	};
+	
 	Transport.prototype._onData = function(data){
 		this._setTimeout();
-		this._decoder.add(data);
+		var msgs = this._decode(data);
+		if (msgs && msgs.length){
+			for (var i = 0, l = msgs.length; i < l; i++){
+				this._onMessage(msgs[i]);
+			}
+		}
 	};
 	
 	Transport.prototype._setTimeout = function(){
@@ -371,37 +186,21 @@ io.data.decodeMessage = function(msg){
 		this._onDisconnect();
 	};
 	
-	Transport.prototype._onMessage = function(type, message){
-    switch (type){
-      case '0':
-        this.disconnect();
-        break;
-
-      case '1':
-        var msg = io.data.decodeMessage(message);
-        // handle json decoding
-        if ('j' in msg[1]){
-          if (!window.JSON || !JSON.parse)
-            alert('`JSON.parse` is not available, but Socket.IO is trying to parse'
-                + 'JSON. Please include json2.js in your <head>');
-          msg[0] = JSON.parse(msg[0]);
-        }
-        this.base._onMessage(msg[0], msg[1]);
-        break;
-
-      case '2':
-        this._onHeartbeat(message);
-        break;
-
-      case '3':
-        this.sessionid = message;
-        this._onConnect();
-        break;
-    }
+	Transport.prototype._onMessage = function(message){
+		if (!this.sessionid){
+			this.sessionid = message;
+			this._onConnect();
+		} else if (message.substr(0, 3) == '~h~'){
+			this._onHeartbeat(message.substr(3));
+		} else if (message.substr(0, 3) == '~j~'){
+			this.base._onMessage(JSON.parse(message.substr(3)));
+		} else {
+			this.base._onMessage(message);
+		}
 	},
 	
 	Transport.prototype._onHeartbeat = function(heartbeat){
-		this.write('2', heartbeat); // echo
+		this.send('~h~' + heartbeat); // echo
 	};
 	
 	Transport.prototype._onConnect = function(){
@@ -428,7 +227,6 @@ io.data.decodeMessage = function(msg){
 	};
 
 })();
-
 /**
  * Socket.IO client
  * 
@@ -479,17 +277,18 @@ io.data.decodeMessage = function(msg){
 	
 	XHR.prototype._checkSend = function(){
 		if (!this._posting && this._sendBuffer.length){
-			var encoded = io.data.encode(this._sendBuffer);
+			var encoded = this._encode(this._sendBuffer);
 			this._sendBuffer = [];
 			this._send(encoded);
 		}
 	};
 	
-	XHR.prototype.write = function(type, data){
-    if (io.util.isArray(type))
-      this._sendBuffer.push.apply(this._sendBuffer, type);
-    else
-      this._sendBuffer.push([type, data]);
+	XHR.prototype.send = function(data){
+		if (io.util.isArray(data)){
+			this._sendBuffer.push.apply(this._sendBuffer, data);
+		} else {
+			this._sendBuffer.push(data);
+		}
 		this._checkSend();
 		return this;
 	};
@@ -522,13 +321,17 @@ io.data.decodeMessage = function(msg){
 	
 	XHR.prototype._onDisconnect = function(){
 		if (this._xhr){
-			this._xhr.onreadystatechange = this._xhr.onload = empty;
-			this._xhr.abort();
+			this._xhr.onreadystatechange = empty;
+      try {
+        this._xhr.abort();
+      } catch(e){}
 			this._xhr = null;
 		}
 		if (this._sendXhr){
-			this._sendXhr.onreadystatechange = this._sendXhr.onload = empty;
-			this._sendXhr.abort();
+      this._sendXhr.onreadystatechange = empty;
+      try {
+        this._sendXhr.abort();
+      } catch(e){}
 			this._sendXhr = null;
 		}
 		this._sendBuffer = [];
@@ -583,18 +386,17 @@ io.data.decodeMessage = function(msg){
 		this.socket = new WebSocket(this._prepareUrl());
 		this.socket.onmessage = function(ev){ self._onData(ev.data); };
 		this.socket.onclose = function(ev){ self._onClose(); };
+    this.socket.onerror = function(e){ self._onError(e); };
 		return this;
 	};
 	
-	WS.prototype.write = function(type, data){
-		if (this.socket)
-      this.socket.send(io.data.encode(io.util.isArray(type) ? type : [type, data]));
+	WS.prototype.send = function(data){
+		if (this.socket) this.socket.send(this._encode(data));
 		return this;
 	};
 	
 	WS.prototype.disconnect = function(){
 		if (this.socket) this.socket.close();
-    this._onDisconnect();
 		return this;
 	};
 	
@@ -602,6 +404,10 @@ io.data.decodeMessage = function(msg){
 		this._onDisconnect();
 		return this;
 	};
+
+  WS.prototype._onError = function(e){
+    this.base.emit('error', [e]);
+  };
 	
 	WS.prototype._prepareUrl = function(){
 		return (this.base.options.secure ? 'wss' : 'ws') 
@@ -771,9 +577,9 @@ io.data.decodeMessage = function(msg){
 		var self = this;
 		this._xhr = this._request('', 'GET', true);
 		this._xhr.onreadystatechange = function(){
-			if (self._xhr.readyState == 3) self._onData(self._xhr.responseText);
+			if (self._xhr.readyState == 4) self._onData(self._xhr.responseText);
 		};
-		this._xhr.send();
+		this._xhr.send(null);
 	};
 	
 	XHRMultipart.check = function(){
@@ -785,6 +591,7 @@ io.data.decodeMessage = function(msg){
 	};
 	
 })();
+
 /**
  * Socket.IO client
  * 
@@ -821,27 +628,20 @@ io.data.decodeMessage = function(msg){
 	XHRPolling.prototype._get = function(){
 		var self = this;
 		this._xhr = this._request(+ new Date, 'GET');
-		if ('onload' in this._xhr){
-			this._xhr.onload = function(){
-				self._onData(this.responseText);
-				self._get();
-			};
-		} else {
-			this._xhr.onreadystatechange = function(){
-				var status;
-				if (self._xhr.readyState == 4){
-					self._xhr.onreadystatechange = empty;
-					try { status = self._xhr.status; } catch(e){}
-					if (status == 200){
-						self._onData(self._xhr.responseText);
-						self._get();
-					} else {
-						self._onDisconnect();
-					}
-				}
-			};
-		}
-		this._xhr.send();
+    this._xhr.onreadystatechange = function(){
+      var status;
+      if (self._xhr.readyState == 4){
+        self._xhr.onreadystatechange = empty;
+        try { status = self._xhr.status; } catch(e){}
+        if (status == 200){
+          self._onData(self._xhr.responseText);
+          self._get();
+        } else {
+          self._onDisconnect();
+        }
+      }
+    };
+		this._xhr.send(null);
 	};
 
 	XHRPolling.check = function(){
@@ -853,6 +653,7 @@ io.data.decodeMessage = function(msg){
 	};
 
 })();
+
 /**
  * Socket.IO client
  * 
@@ -956,15 +757,6 @@ JSONPPolling.prototype._get = function(){
 	this._script = script;
 };
 
-JSONPPolling.prototype.disconnect = function(){
-	if (this._script){
-		this._script.parentNode.removeChild(this._script);
-		this._script = null;
-	}
-  io.Transport['xhr-polling'].prototype.disconnect.call(this);
-  return this;
-};
-
 JSONPPolling.prototype._ = function(){
 	this._onData.apply(this, arguments);
 	this._get();
@@ -978,7 +770,6 @@ JSONPPolling.check = function(){
 JSONPPolling.xdomainCheck = function(){
 	return true;
 };
-
 /**
  * Socket.IO client
  * 
@@ -1040,52 +831,39 @@ JSONPPolling.xdomainCheck = function(){
 		if (this.transport && !this.connected){
 			if (this.connecting) this.disconnect();
 			this.connecting = true;
+			this.emit('connecting', [this.transport.type]);
 			this.transport.connect();
 			if (this.options.connectTimeout){
 				var self = this;
-				setTimeout(function(){
+				this.connectTimeoutTimer = setTimeout(function(){
 					if (!self.connected){
 						self.disconnect();
 						if (self.options.tryTransportsOnConnectTimeout && !self._rememberedTransport){
-							var remainingTransports = [], transports = self.options.transports;
-							for (var i = 0, transport; transport = transports[i]; i++){
-								if (transport != self.transport.type) remainingTransports.push(transport);
-							}
-							if (remainingTransports.length){
-								self.transport = self.getTransport(remainingTransports);
+							if(!self._remainingTransports) self._remainingTransports = self.options.transports.slice(0);
+							var transports = self._remainingTransports;
+							while(transports.length > 0 && transports.splice(0,1)[0] != self.transport.type){}
+							if(transports.length){
+								self.transport = self.getTransport(transports);
 								self.connect();
 							}
 						}
+						if(!self._remainingTransports || self._remainingTransports.length == 0) self.emit('connect_failed');
 					}
+					if(self._remainingTransports && self._remainingTransports.length == 0) delete self._remainingTransports;
 				}, this.options.connectTimeout);
 			}
 		}
 		return this;
 	};
 	
-	Socket.prototype.write = function(message, atts){
-		if (!this.transport || !this.transport.connected) return this._queue(message, atts);
-		this.transport.write(message, atts);
+	Socket.prototype.send = function(data){
+		if (!this.transport || !this.transport.connected) return this._queue(data);
+		this.transport.send(data);
 		return this;
 	};
 	
-  Socket.prototype.send = function(message, atts){
-    atts = atts || {};
-    if (typeof message == 'object'){
-      atts['j'] = null;
-      message = JSON.stringify(message);
-    }
-    this.write('1', io.data.encodeMessage(message, atts));
-    return this;
-  };
-
-  Socket.prototype.json = function(obj, atts){
-    atts = atts || {};
-    atts['j'] = null
-    return this.send(JSON.stringify(obj), atts);
-  }
-
 	Socket.prototype.disconnect = function(){
+    if (this.connectTimeoutTimer) clearTimeout(this.connectTimeoutTimer);
 		this.transport.disconnect();
 		return this;
 	};
@@ -1096,14 +874,15 @@ JSONPPolling.xdomainCheck = function(){
 		return this;
 	};
 	
-	Socket.prototype.emit = function(name, args){
-		if (name in this._events){
-			for (var i = 0, ii = this._events[name].length; i < ii; i++) 
-				this._events[name][i].apply(this, args === undefined ? [] : args);
-		}
-		return this;
-	};
-	
+  Socket.prototype.emit = function(name, args){
+    if (name in this._events){
+      var events = this._events[name].concat();
+      for (var i = 0, ii = events.length; i < ii; i++)
+        events[i].apply(this, args === undefined ? [] : args);
+    }
+    return this;
+  };
+
 	Socket.prototype.removeEvent = function(name, fn){
 		if (name in this._events){
 			for (var a = 0, l = this._events[name].length; a < l; a++)
@@ -1112,15 +891,15 @@ JSONPPolling.xdomainCheck = function(){
 		return this;
 	};
 	
-	Socket.prototype._queue = function(message, atts){
+	Socket.prototype._queue = function(message){
 		if (!('_queueStack' in this)) this._queueStack = [];
-		this._queueStack.push([message, atts]);
+		this._queueStack.push(message);
 		return this;
 	};
 	
 	Socket.prototype._doQueue = function(){
 		if (!('_queueStack' in this) || !this._queueStack.length) return this;
-		this.transport.write(this._queueStack);
+		this.transport.send(this._queueStack);
 		this._queueStack = [];
 		return this;
 	};
@@ -1148,11 +927,11 @@ JSONPPolling.xdomainCheck = function(){
 		this._queueStack = [];
 		if (wasConnected) this.emit('disconnect');
 	};
+
+  Socket.prototype.fire = Socket.prototype.emit;
 	
 	Socket.prototype.addListener = Socket.prototype.addEvent = Socket.prototype.addEventListener = Socket.prototype.on;
 	
-  Socket.prototype.fire = Socket.prototype.emit;
-
 })();
 
 /*	SWFObject v2.2 <http://code.google.com/p/swfobject/> 
@@ -1774,8 +1553,10 @@ ASProxy.prototype =
   if (window.WebSocket) return;
 
   var console = window.console;
-  if (!console) console = {log: function(){ }, error: function(){ }};
-
+  if (!console || !console.log || !console.error) {
+    console = {log: function(){ }, error: function(){ }};
+  }
+  
   if (!swfobject.hasFlashPlayerVersion("9.0.0")) {
     console.error("Flash Player is not installed.");
     return;
@@ -1797,73 +1578,22 @@ ASProxy.prototype =
       WebSocket.__addTask(function() {
         self.__createFlash(url, protocol, proxyHost, proxyPort, headers);
       });
-    }, 1);
-  }
+    }, 0);
+  };
   
   WebSocket.prototype.__createFlash = function(url, protocol, proxyHost, proxyPort, headers) {
     var self = this;
     self.__flash =
       WebSocket.__flash.create(url, protocol, proxyHost || null, proxyPort || 0, headers || null);
-
-    self.__flash.addEventListener("open", function(fe) {
-      try {
-        self.readyState = self.__flash.getReadyState();
-        if (self.__timer) clearInterval(self.__timer);
-        if (window.opera) {
-          // Workaround for weird behavior of Opera which sometimes drops events.
-          self.__timer = setInterval(function () {
-            self.__handleMessages();
-          }, 500);
-        }
-        if (self.onopen) self.onopen();
-      } catch (e) {
-        console.error(e.toString());
-      }
+    self.__flash.addEventListener("event", function(fe) {
+      // Uses setTimeout() to workaround the error:
+      // > You are trying to call recursively into the Flash Player which is not allowed.
+      setTimeout(function() { self.__handleEvents(); }, 0);
     });
-
-    self.__flash.addEventListener("close", function(fe) {
-      try {
-        self.readyState = self.__flash.getReadyState();
-        if (self.__timer) clearInterval(self.__timer);
-        if (self.onclose) self.onclose();
-      } catch (e) {
-        console.error(e.toString());
-      }
-    });
-
-    self.__flash.addEventListener("message", function() {
-      try {
-        self.__handleMessages();
-      } catch (e) {
-        console.error(e.toString());
-      }
-    });
-
-    self.__flash.addEventListener("error", function(fe) {
-      try {
-        if (self.__timer) clearInterval(self.__timer);
-        if (self.onerror) self.onerror();
-      } catch (e) {
-        console.error(e.toString());
-      }
-    });
-
-    self.__flash.addEventListener("stateChange", function(fe) {
-      try {
-        self.readyState = self.__flash.getReadyState();
-        self.bufferedAmount = fe.getBufferedAmount();
-      } catch (e) {
-        console.error(e.toString());
-      }
-    });
-
     //console.log("[WebSocket] Flash object is ready");
   };
 
   WebSocket.prototype.send = function(data) {
-    if (this.__flash) {
-      this.readyState = this.__flash.getReadyState();
-    }
     if (!this.__flash || this.readyState == WebSocket.CONNECTING) {
       throw "INVALID_STATE_ERR: Web Socket connection has not been established";
     }
@@ -1877,7 +1607,7 @@ ASProxy.prototype =
     if (result < 0) { // success
       return true;
     } else {
-      this.bufferedAmount = result;
+      this.bufferedAmount += result;
       return false;
     }
   };
@@ -1885,7 +1615,6 @@ ASProxy.prototype =
   WebSocket.prototype.close = function() {
     var self = this;
     if (!self.__flash) return;
-    self.readyState = self.__flash.getReadyState();
     if (self.readyState == WebSocket.CLOSED || self.readyState == WebSocket.CLOSING) return;
     self.__flash.close();
     // Sets/calls them manually here because Flash WebSocketConnection.close cannot fire events
@@ -1896,7 +1625,7 @@ ASProxy.prototype =
     if (self.onclose) {
        // Make it asynchronous so that it looks more like an actual
        // close event
-       setTimeout(self.onclose, 1);
+       setTimeout(self.onclose, 0);
      }
   };
 
@@ -1965,30 +1694,62 @@ ASProxy.prototype =
     }
   };
 
-  WebSocket.prototype.__handleMessages = function() {
-    // Gets data using readSocketData() instead of getting it from event object
+  WebSocket.prototype.__handleEvents = function() {
+    // Gets events using receiveEvents() instead of getting it from event object
     // of Flash event. This is to make sure to keep message order.
     // It seems sometimes Flash events don't arrive in the same order as they are sent.
-    var arr = this.__flash.readSocketData();
-    for (var i = 0; i < arr.length; i++) {
-      var data = decodeURIComponent(arr[i]);
+    var events = this.__flash.receiveEvents();
+    for (var i = 0; i < events.length; i++) {
       try {
-        if (this.onmessage) {
-          var e;
-          if (window.MessageEvent) {
-            e = document.createEvent("MessageEvent");
-            e.initMessageEvent("message", false, false, data, null, null, window, null);
-          } else { // IE
-            e = {data: data};
+        var event = events[i];
+        if ("readyState" in event) {
+          this.readyState = event.readyState;
+        }
+        if (event.type == "open") {
+          
+          if (this.__timer) clearInterval(this.__timer);
+          if (window.opera) {
+            // Workaround for weird behavior of Opera which sometimes drops events.
+            this.__timer = setInterval(function () {
+              this.__handleEvents();
+            }, 500);
           }
-          this.onmessage(e);
+          if (this.onopen) this.onopen();
+          
+        } else if (event.type == "close") {
+          
+          if (this.__timer) clearInterval(this.__timer);
+          if (this.onclose) this.onclose();
+          
+        } else if (event.type == "message") {
+          
+          if (this.onmessage) {
+            var data = decodeURIComponent(event.data);
+            var e;
+            if (window.MessageEvent && !window.opera) {
+              e = document.createEvent("MessageEvent");
+              e.initMessageEvent("message", false, false, data, null, null, window, null);
+            } else {
+              // IE and Opera, the latter one truncates the data parameter after any 0x00 bytes.
+              e = {data: data};
+            }
+            this.onmessage(e);
+          }
+          
+        } else if (event.type == "error") {
+          
+          if (this.__timer) clearInterval(this.__timer);
+          if (this.onerror) this.onerror();
+          
+        } else {
+          throw "unknown event type: " + event.type;
         }
       } catch (e) {
         console.error(e.toString());
       }
     }
   };
-
+  
   /**
    * @param {object} object
    * @param {string} type
@@ -2003,7 +1764,7 @@ ASProxy.prototype =
       }
       object.dispatchEvent(event, arguments);
     };
-  }
+  };
 
   /**
    * Basic implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-interface">DOM 2 EventInterface</a>}
@@ -2063,6 +1824,12 @@ ASProxy.prototype =
   WebSocket.CLOSED = 3;
 
   WebSocket.__tasks = [];
+
+  WebSocket.loadFlashPolicyFile = function(url) {
+    WebSocket.__addTask(function() {
+      WebSocket.__flash.loadManualPolicyFile(url);
+    });
+  }
 
   WebSocket.__initialize = function() {
     if (WebSocket.__swfLocation) {

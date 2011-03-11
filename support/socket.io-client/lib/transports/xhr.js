@@ -48,17 +48,18 @@
 	
 	XHR.prototype._checkSend = function(){
 		if (!this._posting && this._sendBuffer.length){
-			var encoded = io.data.encode(this._sendBuffer);
+			var encoded = this._encode(this._sendBuffer);
 			this._sendBuffer = [];
 			this._send(encoded);
 		}
 	};
 	
-	XHR.prototype.write = function(type, data){
-    if (io.util.isArray(type))
-      this._sendBuffer.push.apply(this._sendBuffer, type);
-    else
-      this._sendBuffer.push([type, data]);
+	XHR.prototype.send = function(data){
+		if (io.util.isArray(data)){
+			this._sendBuffer.push.apply(this._sendBuffer, data);
+		} else {
+			this._sendBuffer.push(data);
+		}
 		this._checkSend();
 		return this;
 	};
@@ -91,13 +92,17 @@
 	
 	XHR.prototype._onDisconnect = function(){
 		if (this._xhr){
-			this._xhr.onreadystatechange = this._xhr.onload = empty;
-			this._xhr.abort();
+			this._xhr.onreadystatechange = empty;
+      try {
+        this._xhr.abort();
+      } catch(e){}
 			this._xhr = null;
 		}
 		if (this._sendXhr){
-			this._sendXhr.onreadystatechange = this._sendXhr.onload = empty;
-			this._sendXhr.abort();
+      this._sendXhr.onreadystatechange = empty;
+      try {
+        this._sendXhr.abort();
+      } catch(e){}
 			this._sendXhr = null;
 		}
 		this._sendBuffer = [];

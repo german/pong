@@ -59,52 +59,39 @@
 		if (this.transport && !this.connected){
 			if (this.connecting) this.disconnect();
 			this.connecting = true;
+			this.emit('connecting', [this.transport.type]);
 			this.transport.connect();
 			if (this.options.connectTimeout){
 				var self = this;
-				setTimeout(function(){
+				this.connectTimeoutTimer = setTimeout(function(){
 					if (!self.connected){
 						self.disconnect();
 						if (self.options.tryTransportsOnConnectTimeout && !self._rememberedTransport){
-							var remainingTransports = [], transports = self.options.transports;
-							for (var i = 0, transport; transport = transports[i]; i++){
-								if (transport != self.transport.type) remainingTransports.push(transport);
-							}
-							if (remainingTransports.length){
-								self.transport = self.getTransport(remainingTransports);
+							if(!self._remainingTransports) self._remainingTransports = self.options.transports.slice(0);
+							var transports = self._remainingTransports;
+							while(transports.length > 0 && transports.splice(0,1)[0] != self.transport.type){}
+							if(transports.length){
+								self.transport = self.getTransport(transports);
 								self.connect();
 							}
 						}
+						if(!self._remainingTransports || self._remainingTransports.length == 0) self.emit('connect_failed');
 					}
+					if(self._remainingTransports && self._remainingTransports.length == 0) delete self._remainingTransports;
 				}, this.options.connectTimeout);
 			}
 		}
 		return this;
 	};
 	
-	Socket.prototype.write = function(message, atts){
-		if (!this.transport || !this.transport.connected) return this._queue(message, atts);
-		this.transport.write(message, atts);
+	Socket.prototype.send = function(data){
+		if (!this.transport || !this.transport.connected) return this._queue(data);
+		this.transport.send(data);
 		return this;
 	};
 	
-  Socket.prototype.send = function(message, atts){
-    atts = atts || {};
-    if (typeof message == 'object'){
-      atts['j'] = null;
-      message = JSON.stringify(message);
-    }
-    this.write('1', io.data.encodeMessage(message, atts));
-    return this;
-  };
-
-  Socket.prototype.json = function(obj, atts){
-    atts = atts || {};
-    atts['j'] = null
-    return this.send(JSON.stringify(obj), atts);
-  }
-
 	Socket.prototype.disconnect = function(){
+    if (this.connectTimeoutTimer) clearTimeout(this.connectTimeoutTimer);
 		this.transport.disconnect();
 		return this;
 	};
@@ -115,14 +102,15 @@
 		return this;
 	};
 	
-	Socket.prototype.emit = function(name, args){
-		if (name in this._events){
-			for (var i = 0, ii = this._events[name].length; i < ii; i++) 
-				this._events[name][i].apply(this, args === undefined ? [] : args);
-		}
-		return this;
-	};
-	
+  Socket.prototype.emit = function(name, args){
+    if (name in this._events){
+      var events = this._events[name].concat();
+      for (var i = 0, ii = events.length; i < ii; i++)
+        events[i].apply(this, args === undefined ? [] : args);
+    }
+    return this;
+  };
+
 	Socket.prototype.removeEvent = function(name, fn){
 		if (name in this._events){
 			for (var a = 0, l = this._events[name].length; a < l; a++)
@@ -131,15 +119,15 @@
 		return this;
 	};
 	
-	Socket.prototype._queue = function(message, atts){
+	Socket.prototype._queue = function(message){
 		if (!('_queueStack' in this)) this._queueStack = [];
-		this._queueStack.push([message, atts]);
+		this._queueStack.push(message);
 		return this;
 	};
 	
 	Socket.prototype._doQueue = function(){
 		if (!('_queueStack' in this) || !this._queueStack.length) return this;
-		this.transport.write(this._queueStack);
+		this.transport.send(this._queueStack);
 		this._queueStack = [];
 		return this;
 	};
@@ -167,9 +155,9 @@
 		this._queueStack = [];
 		if (wasConnected) this.emit('disconnect');
 	};
+
+  Socket.prototype.fire = Socket.prototype.emit;
 	
 	Socket.prototype.addListener = Socket.prototype.addEvent = Socket.prototype.addEventListener = Socket.prototype.on;
 	
-  Socket.prototype.fire = Socket.prototype.emit;
-
 })();

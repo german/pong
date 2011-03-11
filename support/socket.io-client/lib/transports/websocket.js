@@ -21,18 +21,17 @@
 		this.socket = new WebSocket(this._prepareUrl());
 		this.socket.onmessage = function(ev){ self._onData(ev.data); };
 		this.socket.onclose = function(ev){ self._onClose(); };
+    this.socket.onerror = function(e){ self._onError(e); };
 		return this;
 	};
 	
-	WS.prototype.write = function(type, data){
-		if (this.socket)
-      this.socket.send(io.data.encode(io.util.isArray(type) ? type : [type, data]));
+	WS.prototype.send = function(data){
+		if (this.socket) this.socket.send(this._encode(data));
 		return this;
 	};
 	
 	WS.prototype.disconnect = function(){
 		if (this.socket) this.socket.close();
-    this._onDisconnect();
 		return this;
 	};
 	
@@ -40,6 +39,10 @@
 		this._onDisconnect();
 		return this;
 	};
+
+  WS.prototype._onError = function(e){
+    this.base.emit('error', [e]);
+  };
 	
 	WS.prototype._prepareUrl = function(){
 		return (this.base.options.secure ? 'wss' : 'ws') 
