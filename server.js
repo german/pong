@@ -103,13 +103,20 @@ io.on('connection', function(client){
         break;
       case 'move':
         if(!selected_room.is_round_started()) {
-          buffer.push({direction: message.direction});
+          buffer = {position_y: message.position_y, player_id: message.player_id};
         }
-        client.broadcast({type: 'move', player_id: message.player_id, direction: message.direction, room_id: message.room_id});
+        var info = {type: 'move', player_id: message.player_id, position_y: message.position_y, room_id: message.room_id};
+        if(message.ball_x) {
+          info['ball_x'] = message.ball_x;
+        }
+        if(message.ball_y) {
+          info['ball_y'] = message.ball_y;
+        }
+        client.broadcast(info);
         break;
       case 'round_started':
         selected_room.set_round_started(true);
-        client.broadcast({type: "round_started", room_id: message.room_id});
+        client.broadcast({type: "round_started", room_id: message.room_id, ball_x: message.ball_x, ball_y: message.ball_y});
         break;
       case 'end_of_the_round':
         selected_room.set_round_started(false);
