@@ -19,6 +19,15 @@ function Ball(context, player_id_that_has_ball, shape) {
     return {ball_x: current_x, ball_y: current_y};
   }
 
+  this.set_coordinates = function(current, previous) {
+    current_x = current.ball_x;
+    current_y = current.ball_y;
+    if(typeof previous != 'undefined') {
+      previous_x = previous.ball_x;
+      previous_y = previous.ball_y;
+    }
+  }
+
   this.redraw = function() {
     if(!window.round_started) {
       this.draw_initial();
