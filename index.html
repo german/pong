@@ -37,7 +37,7 @@
       var BALL_X_STEP = 5, BALL_Y_STEP = 5;
       var ball;
 
-      window.ball_movement_timer = null, window.shape_movement_timer = null;
+      window.ball_movement_timer = null, window.shape_movement_timer = null, window.bg_timer = null;
 
       window.round_could_be_started = false; //player 1 couldn't start if player 2 hadn't been connected
       window.round_started = false; // global to know whether to draw the ball near the shape at the beginning of round
@@ -53,17 +53,32 @@
       }
 
       var start_round = function() {
+        console.log('round started');
         window.round_started = true;
         clearInterval(ball_movement_timer);
 			  ball_movement_timer = setInterval(function() { ball.move.apply(ball) }, TICK_INTERVAL);  // in order to this.draw work in ball's move() function we use apply here
         ball.initial_shot();
+
+        bg_timer = setInterval(function() {
+          var info = {type: 'sync', player_id: current_player_id, position_y: player_shapes[current_player_id].get_y_position(), room_id: window.room_id}
+          if(current_player_id == player_id_having_the_ball) {
+            var coords = ball.get_coordinates();
+            info['ball_x'] = coords.ball_x;
+            info['ball_y'] = coords.ball_y;
+            info['previous_x'] = coords.previous_x;
+            info['previous_y'] = coords.previous_y;
+          }
+          socket.send(info);
+        }, TICK_INTERVAL * 2);
       }
 
       var finish_round = function(player_won) {
         jQuery.facebox('Player ' + player_won + ' won!');
 
-        clearInterval(window.ball_movement_timer);
+        clearInterval(ball_movement_timer);
+        clearInterval(bg_timer);
         ball_movement_timer = null;
+        bg_timer = null;
         round_started = false;
         round_could_be_started = true;
 
@@ -109,14 +124,14 @@
 				      if(current_player_shape.can_move({to: 'top'})) {
 						    current_player_shape.move({to: 'top'});
                 redraw_all();
-                var info = {type: 'move', player_id: current_player_id, position_y: current_player_shape.get_y_position(), room_id: window.room_id};
+                /*var info = {type: 'move', player_id: current_player_id, position_y: current_player_shape.get_y_position(), room_id: window.room_id};
                 if(current_player_id == 1) {
                   // store info on player_1's ball position (no overhead since we already send the message) to sync then
                   var coords = ball.get_coordinates();
                   info['ball_x'] = coords.ball_x;
                   info['ball_y'] = coords.ball_y;
                 }
-		            socket.send(info);
+		            socket.send(info);*/
 						  }
             }, TICK_INTERVAL);
 					} else if ( e.keyCode == 40 && shape_movement_timer == null) {
@@ -124,14 +139,14 @@
 							if(current_player_shape.can_move({to: 'bottom'})) {
 								current_player_shape.move({to: 'bottom'});
 		            redraw_all();
-                var info = {type: 'move', player_id: current_player_id, position_y: current_player_shape.get_y_position(), room_id: window.room_id};
+                /*var info = {type: 'move', player_id: current_player_id, position_y: current_player_shape.get_y_position(), room_id: window.room_id};
                 if(current_player_id == 1) {
                   // store info on player_1's ball position (no overhead since we already send the message) to sync then
                   var coords = ball.get_coordinates();
                   info['ball_x'] = coords.ball_x;
                   info['ball_y'] = coords.ball_y;
                 }
-				        socket.send(info);
+				        socket.send(info);*/
 							}
             }, TICK_INTERVAL);
 					} else if (e.keyCode == 32) { // if spacebar pressed - begin round
@@ -202,7 +217,19 @@
             current_player_id = obj.player_id;
             init();
             // and wait till 2nd user connects to the game
-            break;                    
+            break;
+          case 'sync':
+					  if(obj.room_id == window.room_id && player_shapes[obj.player_id].can_move({to_pos: obj.position_y})) {
+							player_shapes[obj.player_id].move({to_pos: obj.position_y});
+              // ball's position is synced to player having the ball in this round
+              if(obj.ball_x && obj.ball_y) {
+                // second player just corrects position of his ball from player_1's one
+                console.log('correcting ball - ['+obj.ball_x+','+obj.ball_y+']');
+                ball.set_coordinates(obj);
+              }
+              redraw_all();
+            }
+            break;
           case 'move':
 						if(obj.room_id == window.room_id && player_shapes[obj.player_id].can_move({to_pos: obj.position_y})) {
 							player_shapes[obj.player_id].move({to_pos: obj.position_y});
@@ -223,7 +250,7 @@
             break;
           case 'round_started':
             if(obj.room_id == window.room_id) {
-              ball.set_coordinates(obj, {ball_x: obj.ball_x, ball_y: obj.ball_y});
+              ball.set_coordinates(obj);
               start_round();
             }
             break;
@@ -249,8 +276,8 @@
       socket.on('disconnect', function() {
 				connected = false;
 				console.log('disconnected');
-				jQuery('#log').html("<b>Disconnected! Trying to automatically to reconnect in " + RETRY_INTERVAL/1000 + " seconds.</b>");
-				retryConnectOnFailure(RETRY_INTERVAL);
+				//jQuery('#log').html("<b>Disconnected! Trying to automatically to reconnect in " + RETRY_INTERVAL/1000 + " seconds.</b>");
+				//retryConnectOnFailure(RETRY_INTERVAL);
 			});
   	// ]]>
   	</script>
