@@ -16,15 +16,19 @@ function Ball(context, player_id_that_has_ball, shape) {
   previous_y = current_y;
 
   this.get_coordinates = function() {
-    return {ball_x: current_x, ball_y: current_y};
+    return {ball_x: current_x, ball_y: current_y, previous_x: previous_x, previous_y: previous_y};
   }
 
-  this.set_coordinates = function(current, previous) {
-    current_x = current.ball_x;
-    current_y = current.ball_y;
-    if(typeof previous != 'undefined') {
-      previous_x = previous.ball_x;
-      previous_y = previous.ball_y;
+  this.set_coordinates = function(pos) {
+    // we should check whether we're setting already outdated values since we could really make ball.move() do nothing
+    // in ball_timer's function due dx will be == 0 and dy will be == 0 if we set current's values
+    if(previous_x != pos.ball_x && previous_y != pos.ball_y) {
+      current_x = pos.ball_x;
+      current_y = pos.ball_y;
+    }
+    if(pos.previous_x && pos.previous_y) {
+      previous_x = pos.previous_x;
+      previous_y = pos.previous_y;
     }
   }
 
@@ -73,7 +77,7 @@ function Ball(context, player_id_that_has_ball, shape) {
       previous_x = SHAPE_WIDTH;
       current_x = SHAPE_WIDTH - dx;
     }
-
+    //console.log('ball timer - [' + current_x + ', ' + current_y + ']');
     if(current_x > CANVAS_WIDTH || current_x < 0 ) {
       var player_won = (current_x > CANVAS_WIDTH) ? 1 : 2;
       window.player_id_having_the_ball = (player_won == 1) ? 2 : 1;
