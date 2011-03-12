@@ -101,6 +101,22 @@ io.on('connection', function(client){
           console.log('room['+i+']='+rooms[i].get_number_of_connected_players());
         }
         break;
+      case 'sync':
+        var info = {type: 'sync', player_id: message.player_id, position_y: message.position_y, room_id: message.room_id};
+        if(message.ball_x) {
+          info['ball_x'] = message.ball_x;
+        }
+        if(message.ball_y) {
+          info['ball_y'] = message.ball_y;
+        }
+        if(message.previous_x) {
+          info['previous_x'] = message.previous_x;
+        }
+        if(message.previous_y) {
+          info['previous_y'] = message.previous_y;
+        }
+        client.broadcast(info);
+        break;
       case 'move':
         if(!selected_room.is_round_started()) {
           buffer = {position_y: message.position_y, player_id: message.player_id};
