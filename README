@@ -1,5 +1,5 @@
-Simple ping-pong browser game (using canvas/socket.io on client 
-side). Nodejs used as back-end server
+Simple ping-pong browser game (using canvas and socket.io on the client
+side). Node.js used as a back-end server.
 
 To start the game you should install nodejs first 
 (http://nodejs.org/#download)
@@ -7,8 +7,9 @@ To start the game you should install nodejs first
 Then start the server: 
 $ sudo node server.js
 
-Then open two browser windows (currantly tested in Google Chrome only) 
+Finally open two browser windows (currently tested in Google Chrome only)
 and point both to http://localhost:8080
 
-buttons Up/Down - move up/down
-Start round - Spacebar
+Use Up/Down arrows to move your racket up and down. Hit Spacebar to start the round.
+
+Demo: http://germaninthetown.com/pong
