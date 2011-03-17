@@ -7,9 +7,10 @@ To start the game you should install nodejs first
 Then start the server: 
 $ sudo node server.js
 
-Finally open two browser windows (currently tested in Google Chrome only)
-and point both to http://localhost:8080
+Finally open two browser windows and point both to http://localhost:8080
 
 Use Up/Down arrows to move your racket up and down. Hit Spacebar to start the round.
 
 Demo: http://germaninthetown.com/pong
+
+Tested and works in Google Chrome 8-9 and Firefox 4 alpha 10
