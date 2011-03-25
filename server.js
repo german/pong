@@ -22,11 +22,14 @@ server = http.createServer(function(req, res){
     case '/ball.js':
     case '/shape.js':
     case '/jquery.js':
+    case '/jquery.easing.1.3.js':
     case '/facebox/facebox.js':
     case '/facebox/closelabel.png':
     case '/images/red_dot.png':
     case '/images/yellow_dot.png':
     case '/images/green_dot.png':
+    case '/images/player1.png':
+    case '/images/player2.png':
     case '/facebox/facebox.css':
     case '/index.html':
       if(path.match(/\.js$/) != null) {
