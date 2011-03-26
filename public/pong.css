@@ -1,0 +1,61 @@
+body {
+  width:600px;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+#score {
+  margin-top:30px;
+  text-align:center;
+  font-size:36px;
+  font-family: Georgia, Verdana;
+}
+
+#player1_arrow {
+  top:340px;
+  left:105px;
+  position:absolute;
+  font-family: Georgia,Verdana;
+  font-size:16px;
+  color:red;
+  font-style:italic;
+  }
+
+  #player1_arrow img {
+    width:83px;
+    height:68px;
+    vertical-align:middle;
+    margin-left:20px
+  }
+
+#player2_arrow {
+  top:340px;
+  left:990px;
+  position:absolute;
+  font-family:Georgia,Verdana;
+  font-size:16px;
+  color:green;
+  font-style:italic;
+  }
+  #player2_arrow img {
+    width:83px;
+    height:67px;
+    vertical-align:middle;
+    margin-right:20px;
+  }
+
+#log {
+  margin-top:10px;
+  color:red;
+  font-weight:bold;
+  font-size:16px;
+}
+
+#canvas_container {
+  text-align:center;
+  margin-top:50px;
+}
+
+#main_canvas {
+  border:1px solid green;
+}
