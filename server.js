@@ -3,62 +3,18 @@ var http = require('http')
   , fs = require('fs')
   , io = require('./')
   , room_module = require('./room_module')
+  , static = require('./lib/node-static')
   , sys = require('sys')
   , server;
     
+var file = new(static.Server)('./public');
+
 server = http.createServer(function(req, res){
-  var path = url.parse(req.url).pathname, content_type;
-  switch (path){
-    case '/':
-      res.writeHead(200, {'Content-Type': 'text/html'});
-      res.write('<h1><a href="index.html">Play ping-pong</a></h1>');
-      res.end();
-      break;
-    case '/ping':
-      res.writeHead(200, {'Content-Type': 'text/html'});
-      res.write('pong', 'utf8');
-      res.end();
-      break;
-    case '/ball.js':
-    case '/shape.js':
-    case '/jquery.js':
-    case '/jquery.easing.1.3.js':
-    case '/facebox/facebox.js':
-    case '/facebox/closelabel.png':
-    case '/images/red_dot.png':
-    case '/images/yellow_dot.png':
-    case '/images/green_dot.png':
-    case '/images/player1.png':
-    case '/images/player2.png':
-    case '/facebox/facebox.css':
-    case '/index.html':
-      if(path.match(/\.js$/) != null) {
-        content_type = 'text/javascript';
-      } else if(path.match(/\.css$/) != null) {
-        content_type = 'text/css';
-      } else if(path.match(/\.png$/) != null) {
-        content_type = 'image/png';
-      } else {
-        content_type = 'text/html';
-      }
-
-      fs.readFile(__dirname + path, function(err, data){
-        if (err) return send404(res);
-        res.writeHead(200, {'Content-Type': content_type})
-        res.write(data, 'utf8');
-        res.end();
-      });
-      break;
-      
-    default: send404(res);
-  }
-}),
-
-send404 = function(res){
-  res.writeHead(404);
-  res.write('404');
-  res.end();
-};
+  // all static files are served with https://github.com/cloudhead/node-static
+  req.addListener('end', function () {
+    file.serve(req, res);
+  });
+});
 
 // TODO make port configurable
 server.listen(8080);
