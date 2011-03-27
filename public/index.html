@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
   	<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
@@ -269,6 +270,11 @@
 				//jQuery('#log').html("<b>Disconnected! Trying to automatically to reconnect in " + RETRY_INTERVAL/1000 + " seconds.</b>");
 				//retryConnectOnFailure(RETRY_INTERVAL);
 			});
+
+      var window_width = jQuery(window).width();
+      var player1_arrow_width = jQuery('#player1_arrow').width();
+      jQuery('#player1_arrow').css({left: ((window_width / 2) - player1_arrow_width - 350) + 'px'});
+      jQuery('#player2_arrow').css({left: ((window_width / 2) + 350) + 'px'});
   	// ]]>
   	</script>
 
