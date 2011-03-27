@@ -4,12 +4,26 @@ body {
   margin-right:auto;
 }
 
-#score {
+#score_container {
   margin-top:30px;
   text-align:center;
   font-size:36px;
   font-family: Georgia, Verdana;
-}
+  }
+  #score {
+    width:200px;
+    float:left;
+  }
+  #player1_flag {
+    width:200px;
+    float:left;
+    text-align:right;
+  }
+  #player2_flag {
+    width:200px;
+    float:right;
+    text-align:left;
+  }
 
 #player1_arrow {
   top:340px;

@@ -12,9 +12,15 @@
     <link href="facebox/facebox.css" media="screen" rel="stylesheet" type="text/css"/>
     <link href="pong.css" media="screen" rel="stylesheet" type="text/css"/>
     <script src="facebox/facebox.js" type="text/javascript"></script>
+    <script type="text/javascript" src="http://j.maxmind.com/app/country.js"></script>
   </head>
   <body>
-    <div id="score">0 : 0</div>
+    <div id="score_container">
+      <div id="player1_flag">&nbsp;</div>
+      <div id="score">0 : 0</div>
+      <div id="player2_flag"></div>
+    </div>
+
     <div style="clear:both"></div>
 
     <div id="player1_arrow" style="display:none"> That's you <img src="images/player1.png" alt="player 1"/></div>
@@ -27,7 +33,7 @@
 
     <div id="log"></div>
 
-    <script type="text/javascript" language="javascript" charset="utf-8">
+    <script type="text/javascript">
   	// <![CDATA[
       $.facebox.settings.closeImage = 'facebox/closelabel.png';
       $.facebox.settings.loadingImage = 'facebox/loading.gif';
@@ -215,6 +221,13 @@
           case 'player_connected':
             current_player_id = obj.player_id;
             init();
+            // TODO refactor
+            if(obj.player_id == 1) {
+              jQuery('#player1_flag').html('<img src="/country_icons/' + obj.player1_country_code + '.png" width="16" height="11" title="' + obj.player1_country_name + '" alt="' + obj.player1_country_name + '"/ >');
+            } else {
+              jQuery('#player1_flag').html('<img src="/country_icons/' + obj.player1_country_code + '.png" width="16" height="11" title="' + obj.player1_country_name + '" alt="' + obj.player1_country_name + '"/ >');
+              jQuery('#player2_flag').html('<img src="/country_icons/' + obj.player2_country_code + '.png" width="16" height="11" title="' + obj.player2_country_name + '" alt="' + obj.player2_country_name + '"/ >');
+            }
             // and wait till 2nd user connects to the game
             break;
           case 'sync':
@@ -231,6 +244,7 @@
           case 'round_could_be_started':
             if(obj.room_id == window.room_id) {
               round_could_be_started = true;
+              jQuery('#player2_flag').html('<img src="/country_icons/' + obj.country_code + '.png" alt="' + obj.country_name + '" width="16" height="11" alt="' + obj.country_name + '"/ >');
               jQuery.facebox('Round could be started: please press spacebar to start!');
               setTimeout(function() { jQuery.facebox.close() }, 3000); // automatically close the alert after 3 seconds
             }
@@ -280,7 +294,7 @@
 
   <div id="list_of_rooms" style="display:none">
     <h3>Please select to which room you want to connect:</h3>
-    <form id="form_for_list_of_rooms" onsubmit="console.log(typeof window.room_id);if(typeof window.room_id != 'undefined') {$('#errors_for_list_of_rooms').hide(); socket.send({type: 'connect', room_id: window.room_id}); jQuery.facebox.close();} else {$('#errors_for_list_of_rooms').show(); jQuery.facebox({ div: '#list_of_rooms' });}; return false;"></form>
+    <form id="form_for_list_of_rooms" onsubmit="if(typeof window.room_id != 'undefined') {$('#errors_for_list_of_rooms').hide(); socket.send({type: 'connect', room_id: window.room_id, country_code: geoip_country_code().toLowerCase(), country_name: geoip_country_name()}); jQuery.facebox.close();} else {$('#errors_for_list_of_rooms').show(); jQuery.facebox({ div: '#list_of_rooms' });}; return false;"></form>
     <div id="errors_for_list_of_rooms" style="color:red;font-size:16px;float:left;display:none">You should specify which room do you want to play in</div>
   </div>
   </body>

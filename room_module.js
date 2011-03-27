@@ -7,19 +7,33 @@ exports.Room = function() {
   , round_started = false /* we should maintain this*/
   , player_id_having_the_ball = 1 /* */
   , number_of_connected_players = 0
+  , first_player_country_hash = []
+  , second_player_country_hash = []
   ;
+
+  this.get_first_player_country_hash = function() {
+    return first_player_country_hash;
+  }
+
+  this.get_second_player_country_hash = function() {
+    return second_player_country_hash;
+  }
 
   this.is_first_player_connected = function() {
     return first_player_connected;
   }
 
-  this.first_player_connect = function() {
+  this.first_player_connect = function(country_code, country_name) {
     first_player_connected = true;
+    first_player_country_hash.push(country_code);
+    first_player_country_hash.push(country_name);
     number_of_connected_players++;
   }
 
-  this.second_player_connect = function() {
+  this.second_player_connect = function(country_code, country_name) {
     second_player_connected = true;
+    second_player_country_hash.push(country_code);
+    second_player_country_hash.push(country_name);
     number_of_connected_players++;
   }
 
