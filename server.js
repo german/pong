@@ -33,9 +33,9 @@ io.on('connection', function(client){
   // if client just connected send him the list with all available rooms
   var list_of_rooms = {type: 'list_of_rooms', number_of_rooms: number_of_rooms, rooms: []}
   for(var i = 0; i < number_of_rooms; i++) {
-    list_of_rooms['rooms'].push({number_of_connected_players: rooms[i].get_number_of_connected_players()})
+    list_of_rooms['rooms'].push({number_of_connected_players: rooms[i].get_number_of_connected_players(), player1_country: rooms[i].get_first_player_country(), player2_country: rooms[i].get_second_player_country()})
   }
-  console.log(list_of_rooms);
+  //console.log(list_of_rooms);
   client.send(list_of_rooms);
 
   //client.broadcast({ announcement: client.sessionId + ' connected' });
@@ -48,12 +48,12 @@ io.on('connection', function(client){
       case 'connect':
         if(!selected_room.is_first_player_connected()) {
           selected_room.first_player_connect(client.sessionId, message.country_code, message.country_name);
-          client.send({type: 'player_connected', player_id: 1, player1_country_code: message.country_code, player1_country_name: message.country_name});
+          client.send({type: 'player_connected', player_id: 1, player1_country: {code: message.country_code, name: message.country_name}});
         } else {
           selected_room.second_player_connect(client.sessionId, message.country_code, message.country_name);
-          var player1_country = selected_room.get_first_player_country_hash();
-          var player2_country = selected_room.get_second_player_country_hash();
-          client.send({type: 'player_connected', player_id: 2, buffer: buffer, player1_country_code: player1_country[0], player1_country_name: player1_country[1], player2_country_code: player2_country[0], player2_country_name: player2_country[1] }); // when second player has connected, 1st player could had moved up or down his default position, so show him right cordinates in buffer variable
+
+          client.send({type: 'player_connected', player_id: 2, buffer: buffer, player1_country: selected_room.get_first_player_country(), player2_country: selected_room.get_second_player_country() }); // when second player has connected, 1st player could had moved up or down his default position, so show him right cordinates in buffer variable
+
           client.broadcast({ type: 'round_could_be_started', room_id: message.room_id, country_code: message.country_code, country_name: message.country_name});
         }
         for(var i = 0; i < number_of_rooms; i++) {
@@ -89,6 +89,8 @@ io.on('connection', function(client){
   });
 
   client.on('disconnect', function(){
+    // TODO add a timeOut to disconnect
+
     // 1. find in what room the client has disconnected and update rooms var
     var room_id_with_disconnected_player = null;
     for(var i = 0; i < number_of_rooms; i++) {

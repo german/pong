@@ -7,13 +7,13 @@ exports.Room = function() {
   , round_started = false /* we should maintain this*/
   , player_id_having_the_ball = 1 /* */
   , number_of_connected_players = 0
-  , first_player_country_hash = []
-  , second_player_country_hash = []
+  , first_player_country = {}
+  , second_player_country = {}
   , session_ids = {player1: null, player2: null}
   ;
 
-  this.get_first_player_country_hash = function() {
-    return first_player_country_hash;
+  this.get_first_player_country = function() {
+    return first_player_country;
   }
 
   this.debug_session_ids = function() {
@@ -22,8 +22,8 @@ exports.Room = function() {
     }
   }
 
-  this.get_second_player_country_hash = function() {
-    return second_player_country_hash;
+  this.get_second_player_country = function() {
+    return second_player_country;
   }
 
   this.is_first_player_connected = function() {
@@ -32,8 +32,8 @@ exports.Room = function() {
 
   this.first_player_connect = function(session_id, country_code, country_name) {
     first_player_connected = true;
-    first_player_country_hash.push(country_code);
-    first_player_country_hash.push(country_name);
+    first_player_country['code'] = country_code;
+    first_player_country['name'] = country_name;
     number_of_connected_players++;
     session_ids['player1'] = session_id;
   }
@@ -45,8 +45,8 @@ exports.Room = function() {
 
   this.second_player_connect = function(session_id, country_code, country_name) {
     second_player_connected = true;
-    second_player_country_hash.push(country_code);
-    second_player_country_hash.push(country_name);
+    second_player_country['code'] = country_code;
+    second_player_country['name'] = country_name;
     number_of_connected_players++;
     session_ids['player2'] = session_id;
   }
