@@ -75,8 +75,7 @@
       }
 
       var start_round = function() {
-        //console.log('round started');
-        window.round_started = true;
+        round_started = true;
         clearInterval(ball_movement_timer);
 			  ball_movement_timer = setInterval(function() { ball.move.apply(ball) }, TICK_INTERVAL);  // in order to this.draw work in ball's move() function we use apply here
         ball.initial_shot();
@@ -134,7 +133,8 @@
         current_player_shape.draw();
         other_player_shape.draw();
 
-        $('#player' + current_player_id + '_arrow').show().animate({left: (current_player_id == 1 ? '+=100' : '-=100')}, 4000, 'easeOutBounce', function(){ $('#player' + current_player_id + '_arrow').fadeOut(3000)});
+        jQuery('#log').html('');
+        jQuery('#player' + current_player_id + '_arrow').show().animate({left: (current_player_id == 1 ? '+=100' : '-=100')}, 4000, 'easeOutBounce', function(){ jQuery('#player' + current_player_id + '_arrow').fadeOut(3000)});
         // using here workaround with 38,40 pseudo-ASCII codes (button-up/button-down) to move the shape
         // these buttons generate only onkeydown/onkeyup events (which occur only once) so user should
         // push the button many times in order to constantly move it (one step at a time - really SLOW)
@@ -185,7 +185,7 @@
 
 			socket.on('connect', function() {
 				connected = true;
-        jQuery('#log').html("");
+        jQuery('#log').html('');
 				clearTimeout(reconnect_timeout);
 			});
 
@@ -197,6 +197,7 @@
       // 3. - round just began, synchronive initial position of the ball
       // 4. - sync token with current player's ball and racket positions
       // 5. - ball went out of the field / who loose / new round
+      // 6. - player in the same room has been disconnected
       socket.on('message', function(obj){
         switch(obj.type) {
           case 'list_of_rooms':
@@ -227,10 +228,10 @@
             init();
             // TODO refactor
             if(obj.player_id == 1) {
-              jQuery('#player1_flag').html('<img src="/country_icons/' + obj.player1_country_code + '.png" width="16" height="11" title="' + obj.player1_country_name + '" alt="' + obj.player1_country_name + '"/ >');
+              jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country_code + '.png" width="16" height="11" title="' + obj.player1_country_name + '" alt="' + obj.player1_country_name + '"/ >');
             } else {
-              jQuery('#player1_flag').html('<img src="/country_icons/' + obj.player1_country_code + '.png" width="16" height="11" title="' + obj.player1_country_name + '" alt="' + obj.player1_country_name + '"/ >');
-              jQuery('#player2_flag').html('<img src="/country_icons/' + obj.player2_country_code + '.png" width="16" height="11" title="' + obj.player2_country_name + '" alt="' + obj.player2_country_name + '"/ >');
+              jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country_code + '.png" width="16" height="11" title="' + obj.player1_country_name + '" alt="' + obj.player1_country_name + '"/ >');
+              jQuery('#player2_flag').html('<img src="country_icons/' + obj.player2_country_code + '.png" width="16" height="11" title="' + obj.player2_country_name + '" alt="' + obj.player2_country_name + '"/ >');
             }
             // and wait till 2nd user connects to the game
             break;
@@ -250,7 +251,7 @@
               round_could_be_started = true;
               if(jQuery('#player1_notice_audio')[0].play)
                 jQuery('#player1_notice_audio')[0].play();
-              jQuery('#player2_flag').html('<img src="/country_icons/' + obj.country_code + '.png" alt="' + obj.country_name + '" width="16" height="11" alt="' + obj.country_name + '"/ >');
+              jQuery('#player2_flag').html('<img src="country_icons/' + obj.country_code + '.png" alt="' + obj.country_name + '" width="16" height="11" alt="' + obj.country_name + '"/ >');
               jQuery.facebox('Round could be started: please press spacebar to start!');
               setTimeout(function() { jQuery.facebox.close() }, 3000); // automatically close the alert after 3 seconds
             }
@@ -265,6 +266,14 @@
             if(obj.room_id == window.room_id) {
               window.player_id_having_the_ball = obj.player_id_having_the_ball;
               finish_round(obj.player_won);
+            }
+            break;
+          case 'disconnect':
+            if(obj.room_id == window.room_id) {
+              jQuery('#log').html('The your opponent just leaved this room');
+
+              if(round_started)
+                finish_round(current_player_id);
             }
             break;
         }        

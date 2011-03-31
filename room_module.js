@@ -9,10 +9,17 @@ exports.Room = function() {
   , number_of_connected_players = 0
   , first_player_country_hash = []
   , second_player_country_hash = []
+  , session_ids = {player1: null, player2: null}
   ;
 
   this.get_first_player_country_hash = function() {
     return first_player_country_hash;
+  }
+
+  this.debug_session_ids = function() {
+    if(console.log) {
+      console.log('player1 - ' + session_ids['player1'] + '; player2 - ' + session_ids['player2'])
+    }
   }
 
   this.get_second_player_country_hash = function() {
@@ -23,18 +30,47 @@ exports.Room = function() {
     return first_player_connected;
   }
 
-  this.first_player_connect = function(country_code, country_name) {
+  this.first_player_connect = function(session_id, country_code, country_name) {
     first_player_connected = true;
     first_player_country_hash.push(country_code);
     first_player_country_hash.push(country_name);
     number_of_connected_players++;
+    session_ids['player1'] = session_id;
   }
 
-  this.second_player_connect = function(country_code, country_name) {
+  this.first_player_disconnect = function() {
+    first_player_connected = false;
+    session_ids['player1'] = null;
+  }
+
+  this.second_player_connect = function(session_id, country_code, country_name) {
     second_player_connected = true;
     second_player_country_hash.push(country_code);
     second_player_country_hash.push(country_name);
     number_of_connected_players++;
+    session_ids['player2'] = session_id;
+  }
+
+  this.second_player_disconnect = function() {
+    second_player_connected = false;
+    session_ids['player2'] = null;
+  }
+
+  this.disconnect = function(session_id) {
+    if(session_ids['player1'] == session_id) {
+      this.first_player_disconnect();
+      number_of_connected_players--;
+      return true;
+    } else if(session_ids['player2'] == session_id) {
+      this.second_player_disconnect();
+      number_of_connected_players--;
+      return true;
+    }
+    return false;
+  }
+
+  this.is_empty = function() {
+    return !first_player_connected;
   }
 
   this.is_full = function() {
