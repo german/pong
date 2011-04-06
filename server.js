@@ -29,14 +29,17 @@ for(var i = 0; i < number_of_rooms; i++) {
   rooms[i] = new room_module.Room();
 }
 
-io.on('connection', function(client){
-  // if client just connected send him the list with all available rooms
+function get_list_of_rooms() {
   var list_of_rooms = {type: 'list_of_rooms', number_of_rooms: number_of_rooms, rooms: []}
   for(var i = 0; i < number_of_rooms; i++) {
     list_of_rooms['rooms'].push({number_of_connected_players: rooms[i].get_number_of_connected_players(), player1_country: rooms[i].get_first_player_country(), player2_country: rooms[i].get_second_player_country()})
   }
-  //console.log(list_of_rooms);
-  client.send(list_of_rooms);
+  return list_of_rooms;
+}
+
+io.on('connection', function(client){
+  // if client just connected send him the list with all available rooms
+  client.send(get_list_of_rooms());
 
   //client.broadcast({ announcement: client.sessionId + ' connected' });
   
@@ -59,6 +62,9 @@ io.on('connection', function(client){
         for(var i = 0; i < number_of_rooms; i++) {
           rooms[i].debug_session_ids();
         }
+        var list_of_rooms = get_list_of_rooms();
+        client.send(list_of_rooms);
+        client.broadcast(list_of_rooms);
         break;
       case 'sync':
         var info = {type: 'sync', player_id: message.player_id, position_y: message.position_y, room_id: message.room_id};
@@ -108,5 +114,6 @@ io.on('connection', function(client){
 
     // 2. send a message to the room if there is second user
     client.broadcast({ type: 'disconnect', room_id: room_id_with_disconnected_player });
+    client.broadcast(get_list_of_rooms());
   });
 });
