@@ -116,6 +116,83 @@
         redraw_all();
       }
 
+      var point_current_player_with_arrow = function() {
+        jQuery('#player1_arrow').hide();
+        jQuery('#player2_arrow').hide();
+        jQuery('#player' + current_player_id + '_arrow').show().animate({left: (current_player_id == 1 ? '+=100' : '-=100')}, 4000, 'easeOutBounce', function(){ jQuery('#player' + current_player_id + '_arrow').fadeOut(3000)});
+      }
+
+      // could be usefull if player #1 in some room reconnects to the other room which already has one player
+      var switch_rackets = function() {
+        if(current_player_id == 1){
+          current_player_id = 2;
+          player_id_having_the_ball = 1;
+        } else {
+          current_player_id = 1;
+          player_id_having_the_ball = 2;
+        }
+          
+        player_shapes[player_id_having_the_ball].set_ball(ball);  
+        redraw_all();
+
+        point_current_player_with_arrow();
+
+        reset_keyboard_bindings();
+        set_keyboard_bindings_for(player_shapes[2]);
+      }
+
+      var reset_keyboard_bindings = function(){
+        jQuery(window).unbind('keydown');
+        jQuery(window).unbind('keyup');
+        clearInterval(ball_movement_timer);
+        clearInterval(bg_timer);
+        ball_movement_timer = null;
+        bg_timer = null;
+      }
+
+      var set_keyboard_bindings_for = function(shape){ 
+        // using here workaround with 38,40 pseudo-ASCII codes (button-up/button-down) to move the shape
+        // these buttons generate only onkeydown/onkeyup events (which occur only once) so user should
+        // push the button many times in order to constantly move it (one step at a time - really SLOW)
+        // the keypressed event (which could handle continiously pressed buttons) doesn't react on special buttons
+        // so I'd rather just start a timer with shape.move() function on 'onkeydown' event and clear it on 'onkeyup'
+        // (explanation about a mess with keypress/up/down events could be found here: http://unixpapa.com/js/key.html)
+
+        jQuery(window).keydown(function(e) {
+          if ( e.keyCode == 38 && shape_movement_timer == null) {
+            shape_movement_timer = setInterval(function() {
+              if(shape.can_move({to: 'top'})) {
+                shape.move({to: 'top'});
+                redraw_all();
+              }
+            }, TICK_INTERVAL);
+          } else if ( e.keyCode == 40 && shape_movement_timer == null) {
+            shape_movement_timer = setInterval(function() {
+              if(shape.can_move({to: 'bottom'})) {
+                shape.move({to: 'bottom'});
+                redraw_all();
+              }
+            }, TICK_INTERVAL);
+          } else if (e.keyCode == 32) { // if spacebar pressed - begin round
+            if(current_player_id == player_id_having_the_ball && round_could_be_started) {
+              start_round();
+              var coords = ball.get_coordinates();
+              socket.send({type: 'round_started', room_id: window.room_id, ball_x: coords.ball_x, ball_y: coords.ball_y});
+            }
+          }
+        });
+
+        jQuery(window).keyup(function(e) {
+          if ( e.keyCode == 38 && shape_movement_timer != null) {
+            clearInterval(shape_movement_timer);
+            shape_movement_timer = null;
+          } else if ( e.keyCode == 40 && shape_movement_timer != null) {
+            clearInterval(shape_movement_timer);
+            shape_movement_timer = null;
+          }
+        });
+      }
+
       var init = function() {
         var current_player_shape = new Shape(ctx, current_player_id);
         var other_player_shape = new Shape(ctx, ((current_player_id == 1) ? 2 : 1));
@@ -134,49 +211,9 @@
         other_player_shape.draw();
 
         jQuery('#log').html('');
-        jQuery('#player' + current_player_id + '_arrow').show().animate({left: (current_player_id == 1 ? '+=100' : '-=100')}, 4000, 'easeOutBounce', function(){ jQuery('#player' + current_player_id + '_arrow').fadeOut(3000)});
+        point_current_player_with_arrow();
 
-
-        // using here workaround with 38,40 pseudo-ASCII codes (button-up/button-down) to move the shape
-        // these buttons generate only onkeydown/onkeyup events (which occur only once) so user should
-        // push the button many times in order to constantly move it (one step at a time - really SLOW)
-        // the keypressed event (which could handle continiously pressed buttons) doesn't react on special buttons
-        // so I'd rather just start a timer with shape.move() function on 'onkeydown' event and clear it on 'onkeyup'
-        // (explanation about a mess with keypress/up/down events could be found here: http://unixpapa.com/js/key.html)
-
-        window.onkeydown = function(e) {
-          if ( e.keyCode == 38 && shape_movement_timer == null) {
-            shape_movement_timer = setInterval(function() {
-              if(current_player_shape.can_move({to: 'top'})) {
-                current_player_shape.move({to: 'top'});
-                redraw_all();
-              }
-            }, TICK_INTERVAL);
-          } else if ( e.keyCode == 40 && shape_movement_timer == null) {
-            shape_movement_timer = setInterval(function() {
-              if(current_player_shape.can_move({to: 'bottom'})) {
-                current_player_shape.move({to: 'bottom'});
-                redraw_all();
-              }
-            }, TICK_INTERVAL);
-          } else if (e.keyCode == 32) { // if spacebar pressed - begin round
-            if(current_player_id == player_id_having_the_ball && round_could_be_started) {
-              start_round();
-              var coords = ball.get_coordinates();
-              socket.send({type: 'round_started', room_id: window.room_id, ball_x: coords.ball_x, ball_y: coords.ball_y});
-            }
-          }
-        }
-
-        window.onkeyup = function(e) {
-          if ( e.keyCode == 38 && shape_movement_timer != null) {
-            clearInterval(shape_movement_timer);
-            shape_movement_timer = null;
-          } else if ( e.keyCode == 40 && shape_movement_timer != null) {
-            clearInterval(shape_movement_timer);
-            shape_movement_timer = null;
-          }
-        }
+        set_keyboard_bindings_for(current_player_shape);
       }
 
       var socket = new io.Socket(null, {port: 8080, rememberTransport: false, reconnect: true, reconnectionDelay: 100});
@@ -193,11 +230,11 @@
 
       socket.connect();
       //retryConnectOnFailure(RETRY_INTERVAL);
-      // messages could be 5 types
+      // messages could be 6 types
       // 1. - 1st/2nd player connected
       // 2. - round could be started (so player 1 couldn't start if player 2 hadn't connected yet)
       // 3. - round just began, synchronive initial position of the ball
-      // 4. - sync token with current player's ball and racket positions
+      // 4. - sync token with information about current player's ball and racket's position
       // 5. - ball went out of the field / who loose / new round
       // 6. - player in the same room has been disconnected
       socket.on('message', function(obj){
@@ -231,8 +268,13 @@
             break;
           // if this is 1st player then draw ball near him
           case 'player_connected':
-            current_player_id = obj.player_id;
-            init();
+            // if first connect to server (current_player_id undefined) then init() all
+            if(!current_player_id) {
+              current_player_id = obj.player_id;
+              init();
+            } else if(current_player_id != obj.player_id) { // if current_player_id was already initialized and player was connected as the second player to the room => swap the rackets (if he connects to empty room there's no need to init() or switch_rackets())
+              switch_rackets();
+            }
             // TODO refactor
             if(obj.player_id == 1) {
               jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country.code + '.png" width="16" height="11" title="' + obj.player1_country.name + '" alt="' + obj.player1_country.name + '"/ >');
@@ -272,7 +314,8 @@
           case 'end_of_the_round':
             if(obj.room_id == window.room_id) {
               window.player_id_having_the_ball = obj.player_id_having_the_ball;
-              finish_round(obj.player_won);
+              if(round_started)
+                finish_round(obj.player_won);
             }
             break;
           case 'disconnect':

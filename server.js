@@ -37,18 +37,32 @@ function get_list_of_rooms() {
   return list_of_rooms;
 }
 
+// number_of_rooms - global integer
+// rooms - global array
+function find_room_and_disconnect_by_session_id(session_id) {
+  var room_id_with_disconnected_player = null;
+  for(var i = 0; i < number_of_rooms; i++) {
+    var room = rooms[i];
+    if(!room.is_empty()) {
+      if(room.disconnect(session_id)) {
+        room_id_with_disconnected_player = i;
+        break;
+      }
+    }
+  }
+  return room_id_with_disconnected_player;
+}
+
 io.on('connection', function(client){
   // if client just connected send him the list with all available rooms
-  client.send(get_list_of_rooms());
-
-  //client.broadcast({ announcement: client.sessionId + ' connected' });
-  
+  client.send(get_list_of_rooms());  
   client.on('message', function(message){
-    //var msg = { message: [client.sessionId, message] };
-    //console.log(message);
     var selected_room = rooms[message.room_id];
     switch(message.type) {
       case 'connect':
+        // check whether this connected user was not connected to the other room on the same server
+        find_room_and_disconnect_by_session_id(client.sessionId);
+
         if(!selected_room.is_first_player_connected()) {
           selected_room.first_player_connect(client.sessionId, message.country_code, message.country_name);
           client.send({type: 'player_connected', player_id: 1, player1_country: {code: message.country_code, name: message.country_name}});
@@ -98,16 +112,8 @@ io.on('connection', function(client){
     // TODO add a timeOut to disconnect
 
     // 1. find in what room the client has disconnected and update rooms var
-    var room_id_with_disconnected_player = null;
-    for(var i = 0; i < number_of_rooms; i++) {
-      var room = rooms[i];
-      if(!room.is_empty()) {
-        if(room.disconnect(client.sessionId)) {
-          room_id_with_disconnected_player = i;
-          break;
-        }
-      }
-    }
+    var room_id_with_disconnected_player = find_room_and_disconnect_by_session_id(client.sessionId);
+
     for(var i = 0; i < number_of_rooms; i++) {
       rooms[i].debug_session_ids();
     }
