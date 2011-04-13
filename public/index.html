@@ -264,7 +264,6 @@
               $('#form_for_list_of_rooms').append(img_for_room+'<input type="radio" name="room_id" onclick="window.room_id=parseInt(this.value)" '+is_room_disabled_for_select+' value="' + i + '"> #' + i + " [" + obj.rooms[i].number_of_connected_players + "] players " + flags + "<br/ >");
             }
             $('#form_for_list_of_rooms').append('<input type="submit" value="Connect"/ >');
-            //jQuery.facebox({ div: '#list_of_rooms' });
             break;
           // if this is 1st player then draw ball near him
           case 'player_connected':
@@ -298,8 +297,11 @@
           case 'round_could_be_started':
             if(obj.room_id == window.room_id) {
               round_could_be_started = true;
-              if(jQuery('#player1_notice_audio')[0].play)
+
+              if(jQuery('#player1_notice_audio')[0].play && jQuery('#play_sound_when_someone_joins_the_room')[0].checked) {
                 jQuery('#player1_notice_audio')[0].play();
+              }
+
               jQuery('#player2_flag').html('<img src="country_icons/' + obj.country_code + '.png" alt="' + obj.country_name + '" width="16" height="11" alt="' + obj.country_name + '"/ >');
               jQuery.facebox('Round could be started: you could press spacebar to start!');
               setTimeout(function() { jQuery.facebox.close() }, 3000); // automatically close the alert after 3 seconds
@@ -361,6 +363,7 @@
     <h3>Please select to which room you want to connect:</h3>
     <form id="form_for_list_of_rooms" onsubmit="if(typeof window.room_id != 'undefined') {$('#errors_for_list_of_rooms').hide(); socket.send({type: 'connect', room_id: window.room_id, country_code: geoip_country_code().toLowerCase(), country_name: geoip_country_name()}); jQuery.facebox.close();} else {$('#errors_for_list_of_rooms').show(); jQuery.facebox({ div: '#list_of_rooms' });}; return false;"></form>
     <div id="errors_for_list_of_rooms" style="color:red;font-size:16px;float:left;display:none">You should specify which room do you want to play in</div>
-  </div>
+    <div style="float:left;margin-top:20px;"><input type="checkbox" id="play_sound_when_someone_joins_the_room" checked/> Play a doorbell sound when someone joins the room?</div>
+  </div>  
   </body>
 </html>
