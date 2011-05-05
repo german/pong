@@ -9,8 +9,10 @@ $ sudo node server.js
 
 Finally open two browser windows and point both to http://localhost:8080
 
-Use Up/Down arrows to move your racket up and down. Hit Spacebar to start the round.
+Use 'Up' or 'Down' arrows to move your racket. Press Spacebar to start the round (only if two players are connected to the room)
 
-Demo: http://germaninthetown.com/pong
+Demo version: http://germaninthetown.com/pong
 
-Tested and works in Google Chrome 8-9 and Firefox 4 alpha 10
+NB: since the site with demo is hosted in the US user could experience a little lag while playing if one or both players are from Europe or Asia
+
+Tested and works in Google Chrome 8-9 and Firefox 4
