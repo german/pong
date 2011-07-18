@@ -5,7 +5,6 @@ require.paths.unshift(__dirname + '/npm/socket_node_client/lib');
 var http = require('http')
   , url = require('url')
   , fs = require('fs')
-  , io = require('./')
   , static = require('./lib/node-static')
   , sys = require('sys')
   , server;
