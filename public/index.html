@@ -5,7 +5,7 @@
     <title>Ping pong</title>
     <meta name="description" content="Simple in-browser ping-pong game written in javascript (using node.js as back-end server, socket.io and canvas on the client-side)" />
     <meta name="keywords" content="ping pong game, ping-pong, node.js, node, javascript, socket.io, canvas, HTML5" />
-    <script src="socket.io/socket.io.js"></script>
+    <script src="socket.io/socket.io.min.js"></script>
     <script src="shape.js"></script>
     <script src="ball.js"></script>  		
 
@@ -43,7 +43,7 @@
 
   <div id="list_of_rooms">
     <h3>Please select to which room you want to connect:</h3>
-    <form id="form_for_list_of_rooms" onsubmit="if(typeof window.room_id != 'undefined') {$('#errors_for_list_of_rooms').hide(); socket.send({type: 'connect', room_id: window.room_id, country_code: geoip_country_code().toLowerCase(), country_name: geoip_country_name()}); jQuery.facebox.close();} else {$('#errors_for_list_of_rooms').show(); jQuery.facebox({ div: '#list_of_rooms' });}; return false;"></form>
+    <form id="form_for_list_of_rooms" onsubmit="if(typeof window.room_id != 'undefined') {$('#errors_for_list_of_rooms').hide(); socket.json.emit('connect', {room_id: window.room_id, country_code: geoip_country_code().toLowerCase(), country_name: geoip_country_name()}); jQuery.facebox.close();} else {$('#errors_for_list_of_rooms').show(); jQuery.facebox({ div: '#list_of_rooms' });}; return false;"></form>
     <div id="errors_for_list_of_rooms" style="color:red;font-size:16px;float:left;display:none">You should specify which room do you want to play in</div>
     <div style="float:left;margin-top:20px;"><input type="checkbox" id="play_sound_when_someone_joins_the_room" checked/> Play a doorbell sound when someone joins the room?</div>
   </div>  

@@ -82,7 +82,7 @@ function Ball(context, player_id_that_has_ball, shape) {
       var player_won = (current_x > CANVAS_WIDTH) ? 1 : 2;
       window.player_id_having_the_ball = (player_won == 1) ? 2 : 1;
       finish_round(player_won);
-      socket.send({type: "end_of_the_round", player_won: player_won, room_id: window.room_id});
+      socket.json.emit("end_of_the_round", {player_won: player_won, room_id: window.room_id});
     }
 
     this.redraw();
