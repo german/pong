@@ -2,7 +2,7 @@ $.facebox.settings.closeImage = 'facebox/closelabel.png';
 $.facebox.settings.loadingImage = 'facebox/loading.gif';
 var ctx    = document.getElementById('main_canvas').getContext('2d');
 
-var TICK_INTERVAL  = 50;
+var TICK_INTERVAL  = 75;
 
 var CANVAS_HEIGHT  = 500;
 var CANVAS_WIDTH   = 500;
@@ -36,11 +36,12 @@ var redraw_all = function() {
 var start_round = function() {
   round_started = true;
   clearInterval(ball_movement_timer);
+  clearInterval(bg_timer);
   ball_movement_timer = setInterval(function() { ball.move.apply(ball) }, TICK_INTERVAL);  // in order to this.draw work in ball's move() function we use apply here
   ball.initial_shot();
 
   bg_timer = setInterval(function() {
-    var info = {type: 'sync', player_id: current_player_id, position_y: player_shapes[current_player_id].get_y_position(), room_id: window.room_id}
+    var info = {player_id: current_player_id, position_y: player_shapes[current_player_id].get_y_position(), room_id: window.room_id}
     if(current_player_id == player_id_having_the_ball) {
       var coords = ball.get_coordinates();
       info['ball_x'] = coords.ball_x;
@@ -48,14 +49,13 @@ var start_round = function() {
       info['previous_x'] = coords.previous_x;
       info['previous_y'] = coords.previous_y;
     }
-    socket.send(info);
+    socket.json.emit('sync', info);
   }, TICK_INTERVAL);
 }
 
 var finish_round = function(player_won) {
   jQuery.facebox('Player ' + player_won + ' won!');
   setTimeout(function() { jQuery.facebox.close() }, 3000); // automatically close the alert after 3 seconds
-
   clearInterval(ball_movement_timer);
   clearInterval(bg_timer);
   ball_movement_timer = null;
@@ -136,7 +136,7 @@ var set_keyboard_bindings_for = function(shape){
       if(current_player_id == player_id_having_the_ball && round_could_be_started) {
         start_round();
         var coords = ball.get_coordinates();
-        socket.send({type: 'round_started', room_id: window.room_id, ball_x: coords.ball_x, ball_y: coords.ball_y});
+        socket.json.emit('round_started', {room_id: window.room_id, ball_x: coords.ball_x, ball_y: coords.ball_y});
       }
     }
   });
@@ -176,20 +176,7 @@ var init = function() {
   set_keyboard_bindings_for(current_player_shape);
 }
 
-var socket = new io.Socket(null, {port: 8080, rememberTransport: false, reconnect: true, reconnectionDelay: 100});
-
-var connected = false;
-var RETRY_INTERVAL = 1000;
-var reconnect_timeout;
-
-socket.on('connect', function() {
-  connected = true;
-  jQuery('#log').html('');
-  clearTimeout(reconnect_timeout);
-});
-
-socket.connect();
-//retryConnectOnFailure(RETRY_INTERVAL);
+var socket = io.connect('http://localhost:8080');
 
 // messages could be 6 types
 // 1. - 1st/2nd player connected
@@ -198,119 +185,91 @@ socket.connect();
 // 4. - sync token with information about current player's ball and racket's position
 // 5. - ball went out of the field / who loose / new round
 // 6. - player in the same room has been disconnected
-socket.on('message', function(obj){
-  switch(obj.type) {
-    case 'list_of_rooms':
-      $('#form_for_list_of_rooms').html('');
-      var img_for_room, is_room_disabled_for_select = '', flags = '';
-      for(var i = 0; i < obj.number_of_rooms; i++) {
-        switch(obj.rooms[i].number_of_connected_players) {
-          case 0:
-            img_for_room = '<img src="images/green_dot.png" width="12" height="12" alt="Available"/ >';
-            is_room_disabled_for_select = '';
-            flags = '';
-            break;
-          case 1:
-            img_for_room = '<img src="images/yellow_dot.png" width="12" height="11" alt="Available"/ >';
-            is_room_disabled_for_select = ''
-            flags = '<img src="country_icons/' + obj.rooms[i].player1_country.code + '.png" width="16" height="11" title="' + obj.rooms[i].player1_country.name + '" alt="' + obj.rooms[i].player1_country.name + '"/ >';
-            break;
-          case 2:
-            img_for_room = '<img src="images/red_dot.png" width="12" height="11" alt="Full"/ >';
-            is_room_disabled_for_select = 'disabled';
-            flags = '<img src="country_icons/' + obj.rooms[i].player1_country.code + '.png" width="16" height="11" title="' + obj.rooms[i].player1_country.name + '" alt="' + obj.rooms[i].player1_country.name + '"/ >';
-            flags += ' vs <img src="country_icons/' + obj.rooms[i].player2_country.code + '.png" width="16" height="11" title="' + obj.rooms[i].player2_country.name + '" alt="' + obj.rooms[i].player2_country.name + '"/ >'
-            break;
-          }
-        $('#form_for_list_of_rooms').append(img_for_room+'<input type="radio" name="room_id" onclick="window.room_id=parseInt(this.value)" '+is_room_disabled_for_select+' value="' + i + '"> #' + i + " [" + obj.rooms[i].number_of_connected_players + "] players " + flags + "<br/ >");
+socket.on('list_of_rooms', function(obj){
+  $('#form_for_list_of_rooms').html('');
+  var img_for_room, is_room_disabled_for_select = '', flags = '';
+  for(var i = 0; i < obj.number_of_rooms; i++) {
+    switch(obj.rooms[i].number_of_connected_players) {
+      case 0:
+        img_for_room = '<img src="images/green_dot.png" width="12" height="12" alt="Available"/ >';
+        is_room_disabled_for_select = '';
+        flags = '';
+        break;
+      case 1:
+        img_for_room = '<img src="images/yellow_dot.png" width="12" height="11" alt="Available"/ >';
+        is_room_disabled_for_select = ''
+        flags = '<img src="country_icons/' + obj.rooms[i].player1_country.code + '.png" width="16" height="11" title="' + obj.rooms[i].player1_country.name + '" alt="' + obj.rooms[i].player1_country.name + '"/ >';
+        break;
+      case 2:
+        img_for_room = '<img src="images/red_dot.png" width="12" height="11" alt="Full"/ >';
+        is_room_disabled_for_select = 'disabled';
+        flags = '<img src="country_icons/' + obj.rooms[i].player1_country.code + '.png" width="16" height="11" title="' + obj.rooms[i].player1_country.name + '" alt="' + obj.rooms[i].player1_country.name + '"/ >';
+        flags += ' vs <img src="country_icons/' + obj.rooms[i].player2_country.code + '.png" width="16" height="11" title="' + obj.rooms[i].player2_country.name + '" alt="' + obj.rooms[i].player2_country.name + '"/ >'
+        break;
       }
-      $('#form_for_list_of_rooms').append('<input type="submit" value="Connect"/ >');
-      break;
-
-    // if this is 1st player then draw ball near him
-    case 'player_connected':
-      // if first connect to server (current_player_id undefined) then init() all
-      if(!current_player_id) {
-        current_player_id = obj.player_id;
-        init();
-      } else if(current_player_id != obj.player_id) { // if current_player_id was already initialized and player was connected as the second player to the room => swap the rackets (if he connects to empty room there's no need to init() or switch_rackets())
-        switch_rackets();
-      }
-      // TODO refactor
-      if(obj.player_id == 1) {
-        jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country.code + '.png" width="16" height="11" title="' + obj.player1_country.name + '" alt="' + obj.player1_country.name + '"/ >');
-      } else {
-        jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country.code + '.png" width="16" height="11" title="' + obj.player1_country.name + '" alt="' + obj.player1_country.name + '"/ >');
-        jQuery('#player2_flag').html('<img src="country_icons/' + obj.player2_country.code + '.png" width="16" height="11" title="' + obj.player2_country.name + '" alt="' + obj.player2_country.name + '"/ >');
-      }
-      // and wait till 2nd user connects to the game
-      break;
-    case 'sync':
-      if(obj.room_id == window.room_id && player_shapes[obj.player_id].can_move({to_pos: obj.position_y})) {
-        player_shapes[obj.player_id].move({to_pos: obj.position_y});
-        // ball's position is synced to player having the ball in this round
-        if(obj.ball_x && obj.ball_y) {
-          // second player just corrects position of his ball from player_1's one
-          ball.set_coordinates(obj);
-        }
-        redraw_all();
-      }
-      break;
-    case 'round_could_be_started':
-      if(obj.room_id == window.room_id) {
-        round_could_be_started = true;
-
-        if(jQuery('#player1_notice_audio')[0].play && jQuery('#play_sound_when_someone_joins_the_room')[0].checked) {
-          jQuery('#player1_notice_audio')[0].play();
-        }
-
-        jQuery('#player2_flag').html('<img src="country_icons/' + obj.country_code + '.png" alt="' + obj.country_name + '" width="16" height="11" alt="' + obj.country_name + '"/ >');
-        jQuery.facebox('Round could be started: you could press spacebar to start!');
-        setTimeout(function() { jQuery.facebox.close() }, 3000); // automatically close the alert after 3 seconds
-      }
-      break;
-    case 'round_started':
-      if(obj.room_id == window.room_id) {
-        ball.set_coordinates(obj);
-        start_round();
-      }
-      break;
-    case 'end_of_the_round':
-      if(obj.room_id == window.room_id) {
-        window.player_id_having_the_ball = obj.player_id_having_the_ball;
-        if(round_started)
-          finish_round(obj.player_won);
-      }
-      break;
-    case 'disconnect':
-      if(obj.room_id == window.room_id) {
-        jQuery('#log').html('The your opponent just leaved this room');
-        if(round_started)
-          finish_round(current_player_id);
-      }
-      break;
-  }        
+    $('#form_for_list_of_rooms').append(img_for_room+'<input type="radio" name="room_id" onclick="window.room_id=parseInt(this.value)" '+is_room_disabled_for_select+' value="' + i + '"> #' + i + " [" + obj.rooms[i].number_of_connected_players + "] players " + flags + "<br/ >");
+  }
+  $('#form_for_list_of_rooms').append('<input type="submit" value="Connect"/ >');
 });
 
-var retryConnectOnFailure = function(retryInMilliseconds) {
-  setTimeout(function() {
-    if (!connected) {
-      //jQuery.get('ping', function(data) { connected = true; });
-      socket.connect();
-      retryConnectOnFailure(retryInMilliseconds);
+socket.on('player_connected', function(obj){
+  // if this is 1st player then draw ball near him
+  // if first connect to server (current_player_id undefined) then init() all
+  if(!current_player_id) {
+    current_player_id = obj.player_id;
+    init();
+  } else if(current_player_id != obj.player_id) { // if current_player_id was already initialized and player was connected as the second player to the room => swap the rackets (if he connects to empty room there's no need to init() or switch_rackets())
+    switch_rackets();
+  }
+  
+  if(obj.player_id == 1) {
+    jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country.code + '.png" width="16" height="11" title="' + obj.player1_country.name + '" alt="' + obj.player1_country.name + '"/ >');
+  } else {
+    jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country.code + '.png" width="16" height="11" title="' + obj.player1_country.name + '" alt="' + obj.player1_country.name + '"/ >');
+    jQuery('#player2_flag').html('<img src="country_icons/' + obj.player2_country.code + '.png" width="16" height="11" title="' + obj.player2_country.name + '" alt="' + obj.player2_country.name + '"/ >');
+  }
+  // and wait till 2nd user connects to the game  
+});
+
+socket.on('sync', function(obj){
+  if(obj.room_id == window.room_id && player_shapes[obj.player_id].can_move({to_pos: obj.position_y})) {
+    player_shapes[obj.player_id].move({to_pos: obj.position_y});
+    // ball's position is synced to player having the ball in this round
+    if(obj.ball_x && obj.ball_y) {
+      // second player just corrects position of his ball from player_1's one
+      ball.set_coordinates(obj);
     }
-  }, retryInMilliseconds);
-};
-
-socket.on('reconnect', function() {
-  jQuery('#log').html("<b>Disconnected!</b>");
+    redraw_all();
+  }
 });
 
-socket.on('disconnect', function() {
-  connected = false;
-  console.log('disconnected');
-  //jQuery('#log').html("<b>Disconnected! Trying to automatically to reconnect in " + RETRY_INTERVAL/1000 + " seconds.</b>");
-  //retryConnectOnFailure(RETRY_INTERVAL);
+socket.on('round_could_be_started', function(obj){
+  if(obj.room_id == window.room_id) {
+    round_could_be_started = true;
+
+    if(jQuery('#player1_notice_audio')[0].play && jQuery('#play_sound_when_someone_joins_the_room')[0].checked) {
+      jQuery('#player1_notice_audio')[0].play();
+    }
+
+    jQuery('#player2_flag').html('<img src="country_icons/' + obj.country_code + '.png" alt="' + obj.country_name + '" width="16" height="11" alt="' + obj.country_name + '"/ >');
+    jQuery.facebox('Round could be started: you could press spacebar to start!');
+    setTimeout(function() { jQuery.facebox.close() }, 3000); // automatically close the alert after 3 seconds
+  }
+});
+
+socket.on('round_started', function(obj){
+  console.log('round started from server')
+  if(obj.room_id == window.room_id) {
+    ball.set_coordinates(obj);
+    start_round();
+  }
+});
+
+socket.on('end_of_the_round', function(obj){
+  if(obj.room_id == window.room_id) {
+    window.player_id_having_the_ball = obj.player_id_having_the_ball;
+    if(round_started) finish_round(obj.player_won);
+  }
 });
 
 var window_width = jQuery(window).width();
