@@ -2,7 +2,7 @@ $.facebox.settings.closeImage = 'facebox/closelabel.png';
 $.facebox.settings.loadingImage = 'facebox/loading.gif';
 var ctx    = document.getElementById('main_canvas').getContext('2d');
 
-var TICK_INTERVAL  = 75;
+var TICK_INTERVAL  = 50;
 
 var CANVAS_HEIGHT  = 500;
 var CANVAS_WIDTH   = 500;
@@ -213,18 +213,15 @@ socket.on('list_of_rooms', function(obj){
 });
 
 socket.on('player_connected', function(obj){
-  // if this is 1st player then draw ball near him
-  // if first connect to server (current_player_id undefined) then init() all
+  // if user just connected to the server (current_player_id undefined) then init() all (if this is 1st player then draw ball near him)
   if(!current_player_id) {
     current_player_id = obj.player_id;
     init();
-  } else if(current_player_id != obj.player_id) { // if current_player_id was already initialized and player was connected as the second player to the room => swap the rackets (if he connects to empty room there's no need to init() or switch_rackets())
-    switch_rackets();
   }
-  
-  if(obj.player_id == 1) {
+
+  if(obj.player1_country && !obj.player2_country) {
     jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country.code + '.png" width="16" height="11" title="' + obj.player1_country.name + '" alt="' + obj.player1_country.name + '"/ >');
-  } else {
+  } else if(obj.player1_country && obj.player2_country) {
     jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country.code + '.png" width="16" height="11" title="' + obj.player1_country.name + '" alt="' + obj.player1_country.name + '"/ >');
     jQuery('#player2_flag').html('<img src="country_icons/' + obj.player2_country.code + '.png" width="16" height="11" title="' + obj.player2_country.name + '" alt="' + obj.player2_country.name + '"/ >');
   }
@@ -251,14 +248,12 @@ socket.on('round_could_be_started', function(obj){
       jQuery('#player1_notice_audio')[0].play();
     }
 
-    jQuery('#player2_flag').html('<img src="country_icons/' + obj.country_code + '.png" alt="' + obj.country_name + '" width="16" height="11" alt="' + obj.country_name + '"/ >');
     jQuery.facebox('Round could be started: you could press spacebar to start!');
     setTimeout(function() { jQuery.facebox.close() }, 3000); // automatically close the alert after 3 seconds
   }
 });
 
 socket.on('round_started', function(obj){
-  console.log('round started from server')
   if(obj.room_id == window.room_id) {
     ball.set_coordinates(obj);
     start_round();
@@ -269,6 +264,7 @@ socket.on('end_of_the_round', function(obj){
   if(obj.room_id == window.room_id) {
     window.player_id_having_the_ball = obj.player_id_having_the_ball;
     if(round_started) finish_round(obj.player_won);
+    //switch_rackets();
   }
 });
 

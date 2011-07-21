@@ -39,9 +39,10 @@ function Ball(context, player_id_that_has_ball, shape) {
     }
 
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    for(var i = 1; i < 3; i++) { 
-      window.player_shapes[i].draw(); 
-    }
+ 
+    // window.player_shapes[0] == null for better addressation (player1, player2)
+    window.player_shapes[1].draw();
+    window.player_shapes[2].draw();
 
     ctx.beginPath();
       ctx.fillStyle = PLAYER_COLORS[window.player_id_having_the_ball];

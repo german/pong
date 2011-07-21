@@ -48,6 +48,7 @@ io.sockets.on('connection', function (socket) {
       rooms[socket.room_id].count -= 1;
       socket.leave('room#'+socket.room_id);
     }
+    io.sockets.json.emit('list_of_rooms', get_list_of_rooms());
   });
   
   socket.on('round_started', function(msg) {
@@ -84,10 +85,10 @@ io.sockets.on('connection', function (socket) {
       socket.json.emit('player_connected', {player_id: 1, player1_country: rooms[msg.room_id].player1_country});
     } else if(rooms[msg.room_id].count == 2){
       // when second player has connected, 1st player could had moved up or down his default position, so show him right cordinates in buffer variable
-      socket.json.emit('player_connected', {player_id: 2, player1_country: rooms[msg.room_id].player1_country, player2_country: rooms[msg.room_id].player2_country}); // buffer: buffer 
+      io.sockets.in('room#'+msg.room_id).json.emit('player_connected', {player_id: 2, player1_country: rooms[msg.room_id].player1_country, player2_country: rooms[msg.room_id].player2_country});// buffer: buffer 
       io.sockets.in('room#'+msg.room_id).json.emit('round_could_be_started', {room_id: socket.room_id});
     }
     
-    socket.broadcast.json.emit('list_of_rooms', get_list_of_rooms());
+    io.sockets.json.emit('list_of_rooms', get_list_of_rooms());
   })
 });
