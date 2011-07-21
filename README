@@ -7,7 +7,7 @@ To start the game you should install nodejs first
 Then start the server: 
 $ sudo node server.js
 
-Finally open two browser windows and point both to http://localhost:8080
+Finally open two browser windows and point both to http://localhost:8081
 
 Use 'Up' or 'Down' arrows to move your racket. Press Spacebar to start the round (only if two players are connected to the room)
 
