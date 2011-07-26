@@ -42,12 +42,30 @@ function get_list_of_rooms() {
   return list_of_rooms;
 }
 
+function find_room_and_disconnect_by_session_id(id) {
+  for(var i = 0; i < number_of_rooms; i++) {
+    var room = rooms[i];
+    if(room.count > 0) {
+      if(room.player1_id == id) {
+        room.player1_id = null;
+        room.count -= 1;
+        break;
+      } else if(room.player2_id == id) {
+        room.player2_id = null;
+        room.count -= 1;
+        break;
+      }
+    }
+  }
+}
+
 io.sockets.on('connection', function (socket) {
   socket.emit('list_of_rooms', get_list_of_rooms());  
   
   socket.on('disconnect', function () {
     if(socket.room_id) {
       rooms[socket.room_id].count -= 1;
+      find_room_and_disconnect_by_session_id(socket.id);
       socket.leave('room#'+socket.room_id);
     }
     io.sockets.json.emit('list_of_rooms', get_list_of_rooms());
@@ -70,14 +88,17 @@ io.sockets.on('connection', function (socket) {
   socket.on('connect', function(msg) {
     socket.join('room#' + msg.room_id);
     socket.room_id = msg.room_id;
+    find_room_and_disconnect_by_session_id(socket.id);
     rooms[msg.room_id].count += 1;
     
     if(rooms[msg.room_id].count == 1) {
       rooms[msg.room_id].player1_country = {};
+      rooms[msg.room_id].player1_id = socket.id;
       rooms[msg.room_id].player1_country['code'] = msg.country_code;
       rooms[msg.room_id].player1_country['name'] = msg.country_name;
     } else {
       rooms[msg.room_id].player2_country = {};
+      rooms[msg.room_id].player2_id = socket.id;
       rooms[msg.room_id].player2_country['code'] = msg.country_code;
       rooms[msg.room_id].player2_country['name'] = msg.country_name;
     }
