@@ -63,7 +63,8 @@ io.sockets.on('connection', function (socket) {
   socket.emit('list_of_rooms', get_list_of_rooms());  
   
   socket.on('disconnect', function () {
-    if(socket.room_id) {
+    // make sure that socket's room_id variable is set, so we could keep table of connected users relevant
+    if(socket.room_id != null) {
       rooms[socket.room_id].count -= 1;
       find_room_and_disconnect_by_session_id(socket.id);
       socket.leave('room#'+socket.room_id);
