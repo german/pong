@@ -1,7 +1,3 @@
-require.paths.unshift(__dirname + '/npm/policyfile');
-require.paths.unshift(__dirname + '/npm/socket_node/lib');
-require.paths.unshift(__dirname + '/npm/socket_node_client/lib');
-
 var http = require('http')
   , url = require('url')
   , fs = require('fs')
