@@ -2,7 +2,6 @@ var http = require('http')
   , url = require('url')
   , fs = require('fs')
   , static = require('./lib/node-static')
-  , sys = require('sys')
   , server;
     
 var file = new(static.Server)('./public');
