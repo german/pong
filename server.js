@@ -1,6 +1,6 @@
-require.paths.unshift(__dirname + '/npm/policyfile');
-require.paths.unshift(__dirname + '/npm/socket_node/lib');
-require.paths.unshift(__dirname + '/npm/socket_node_client/lib');
+//require.paths.unshift(__dirname + '/npm/policyfile');
+//require.paths.unshift(__dirname + '/npm/socket_node/lib');
+//require.paths.unshift(__dirname + '/npm/socket_node_client/lib');
 
 var http = require('http')
   , url = require('url')
@@ -21,7 +21,7 @@ server = http.createServer(function(req, res){
 
 // TODO make port configurable
 // if you going to change this you also will need to change port in the connection line in ./public/pong.js
-var io = require('socket.io').listen(8080);
+var io = require('socket_node/lib/socket.io').listen(8080);
 
 var buffer = []
   , number_of_rooms = 10
