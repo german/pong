@@ -2,7 +2,7 @@ $.facebox.settings.closeImage = 'facebox/closelabel.png';
 $.facebox.settings.loadingImage = 'facebox/loading.gif';
 var ctx    = document.getElementById('main_canvas').getContext('2d');
 
-var TICK_INTERVAL  = 50;
+var TICK_INTERVAL  = 70;
 
 var CANVAS_HEIGHT  = 500;
 var CANVAS_WIDTH   = 500;
@@ -12,11 +12,10 @@ var SHAPE_HEIGHT   = 60;
 var BALL_DIAMETER  = 3;
 PLAYER_COLORS  = [null, '#D40000', '#07AF45']
 
-var current_player_id;
+var current_player_id, ball, current_room_id;
 window.player_shapes = [null];
 var player_id_having_the_ball = 1; // this could vary once the ball went off the canvas / round ended
 var BALL_X_STEP = 5, BALL_Y_STEP = 5;
-var ball;
 
 window.ball_movement_timer = null, window.shape_movement_timer = null, window.bg_timer = null;
 
@@ -40,6 +39,7 @@ var start_round = function() {
   ball_movement_timer = setInterval(function() { ball.move.apply(ball) }, TICK_INTERVAL);  // in order to this.draw work in ball's move() function we use apply here
   ball.initial_shot();
 
+  // we're setting timer which will sync position of the ball every TICK_INTERVAL ms
   bg_timer = setInterval(function() {
     var info = {player_id: current_player_id, position_y: player_shapes[current_player_id].get_y_position(), room_id: window.room_id}
     if(current_player_id == player_id_having_the_ball) {
@@ -82,14 +82,14 @@ var point_current_player_with_arrow = function() {
 }
 
 // could be usefull if player #1 in some room reconnects to the other room which already has one player
-var switch_rackets = function() {
-  if(current_player_id == 1){
+var switch_bats = function() {
+  /*if(current_player_id == 1){
     current_player_id = 2;
     player_id_having_the_ball = 1;
   } else {
     current_player_id = 1;
     player_id_having_the_ball = 2;
-  }
+  }*/
           
   player_shapes[player_id_having_the_ball].set_ball(ball);  
   redraw_all();
@@ -217,7 +217,15 @@ socket.on('player_connected', function(obj){
   if(!current_player_id) {
     current_player_id = obj.player_id;
     init();
+  } else {
+    // if user was in room alone (he was player #1) and then switched to another room with one player he should be player #2 here
+    if(obj.player_id == 2 && current_player_id == 1 && current_room_id != obj.room_id) {
+      current_player_id = 2;
+      switch_bats();
+    }
   }
+
+  current_room_id = obj.room_id;
 
   if(obj.player1_country && !obj.player2_country) {
     jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country.code + '.png" width="16" height="11" title="' + obj.player1_country.name + '" alt="' + obj.player1_country.name + '"/ >');
@@ -264,7 +272,7 @@ socket.on('end_of_the_round', function(obj){
   if(obj.room_id == window.room_id) {
     window.player_id_having_the_ball = obj.player_id_having_the_ball;
     if(round_started) finish_round(obj.player_won);
-    //switch_rackets();
+    //switch_bats();
   }
 });
 

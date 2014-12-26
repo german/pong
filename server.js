@@ -1,12 +1,7 @@
-//require.paths.unshift(__dirname + '/npm/policyfile');
-//require.paths.unshift(__dirname + '/npm/socket_node/lib');
-//require.paths.unshift(__dirname + '/npm/socket_node_client/lib');
-
 var http = require('http')
   , url = require('url')
   , fs = require('fs')
   , static = require('./lib/node-static')
-  , sys = require('sys')
   , server;
     
 var file = new(static.Server)('./public');
@@ -106,10 +101,10 @@ io.sockets.on('connection', function (socket) {
     
     // check whether this connected user was not connected to the other room on the same server
     if(rooms[msg.room_id].count == 1) {
-      socket.json.emit('player_connected', {player_id: 1, player1_country: rooms[msg.room_id].player1_country});
-    } else if(rooms[msg.room_id].count == 2){
+      socket.json.emit('player_connected', {player_id: 1, room_id: msg.room_id, player1_country: rooms[msg.room_id].player1_country});
+    } else if(rooms[msg.room_id].count == 2) {
       // when second player has connected, 1st player could had moved up or down his default position, so show him right cordinates in buffer variable
-      io.sockets.in('room#'+msg.room_id).json.emit('player_connected', {player_id: 2, player1_country: rooms[msg.room_id].player1_country, player2_country: rooms[msg.room_id].player2_country});// buffer: buffer 
+      io.sockets.in('room#'+msg.room_id).json.emit('player_connected', {player_id: 2, room_id: msg.room_id, player1_country: rooms[msg.room_id].player1_country, player2_country: rooms[msg.room_id].player2_country});// buffer: buffer 
       io.sockets.in('room#'+msg.room_id).json.emit('round_could_be_started', {room_id: socket.room_id});
     }
     
