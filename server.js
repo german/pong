@@ -1,7 +1,5 @@
 var http = require('http')
-  , url = require('url')
-  , fs = require('fs')
-  , static = require('./lib/node-static')
+  , static = require('node-static')
   , server;
     
 var file = new(static.Server)('./public');
@@ -11,8 +9,9 @@ server = http.createServer(function(req, res){
   // all static files are served with https://github.com/cloudhead/node-static
   req.addListener('end', function () {
     file.serve(req, res);
-  });
+  }).resume();
 }).listen(8081);
+
 
 // TODO make port configurable
 // if you going to change this you also will need to change port in the connection line in ./public/pong.js
