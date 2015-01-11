@@ -209,7 +209,23 @@ socket.on('list_of_rooms', function(obj){
       }
     $('#form_for_list_of_rooms').append(img_for_room+'<input type="radio" name="room_id" onclick="window.room_id=parseInt(this.value)" '+is_room_disabled_for_select+' value="' + i + '"> #' + i + " [" + obj.rooms[i].number_of_connected_players + "] players " + flags + "<br/ >");
   }
-  $('#form_for_list_of_rooms').append('<input type="submit" value="Connect"/ >');
+  $('#form_for_list_of_rooms').append('<button>Connect</button>');
+
+	jQuery('#form_for_list_of_rooms button').on('click', function() {
+		if(typeof window.room_id != 'undefined') { 
+			$('#errors_for_list_of_rooms').hide();
+		
+			socket.json.emit('connect', {
+				room_id: window.room_id, 
+				country_code: country_code.toLowerCase(),
+				country_name: country_name
+			}); 
+			jQuery.facebox.close();
+		} else {
+			$('#errors_for_list_of_rooms').show(); 
+			jQuery.facebox({ div: '#list_of_rooms' });
+		}; 
+	})
 });
 
 socket.on('player_connected', function(obj){
@@ -276,7 +292,16 @@ socket.on('end_of_the_round', function(obj){
   }
 });
 
-var window_width = jQuery(window).width();
-var player1_arrow_width = jQuery('#player1_arrow').width();
+var window_width = jQuery(window).width(),
+		player1_arrow_width = jQuery('#player1_arrow').width(),
+		country_code, country_name;
+
 jQuery('#player1_arrow').css({left: ((window_width / 2) - player1_arrow_width - 350) + 'px'});
 jQuery('#player2_arrow').css({left: ((window_width / 2) + 350) + 'px'});
+
+jQuery(function(){
+	geoip2.country(function(location) {
+	  country_code = location.country.iso_code;
+		country_name = location.country.names.en;
+	});
+});
