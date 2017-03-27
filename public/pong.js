@@ -17,7 +17,9 @@ window.player_shapes = [null];
 var player_id_having_the_ball = 1; // this could vary once the ball went off the canvas / round ended
 var BALL_X_STEP = 5, BALL_Y_STEP = 5;
 
-window.ball_movement_timer = null, window.shape_movement_timer = null, window.bg_timer = null;
+window.ball_movement_timer = null, 
+window.shape_movement_timer = null, 
+window.bg_timer = null;
 
 window.round_could_be_started = false; //player 1 couldn't start if player 2 hadn't been connected
 window.round_started = false; // global to know whether to draw the ball near the shape at the beginning of round
@@ -81,7 +83,8 @@ var point_current_player_with_arrow = function() {
   jQuery('#player' + current_player_id + '_arrow').show().animate({left: (current_player_id == 1 ? '+=100' : '-=100')}, 4000, 'easeOutBounce', function(){ jQuery('#player' + current_player_id + '_arrow').fadeOut(3000)});
 }
 
-// could be usefull if player #1 in some room reconnects to the other room which already has one player
+// could be usefull if player #1 in some room reconnects to the other room
+// which already has one player
 var switch_bats = function() {
   /*if(current_player_id == 1){
     current_player_id = 2;
@@ -178,7 +181,7 @@ var init = function() {
 
 var socket = io.connect('http://localhost:8080');
 
-// messages could be 6 types
+// messages could be of 6 types
 // 1. - 1st/2nd player connected
 // 2. - round could be started (so player 1 couldn't start if player 2 hadn't connected yet)
 // 3. - round just began, synchronive initial position of the ball
@@ -296,8 +299,12 @@ var window_width = jQuery(window).width(),
 		player1_arrow_width = jQuery('#player1_arrow').width(),
 		country_code, country_name;
 
-jQuery('#player1_arrow').css({left: ((window_width / 2) - player1_arrow_width - 350) + 'px'});
-jQuery('#player2_arrow').css({left: ((window_width / 2) + 350) + 'px'});
+jQuery('#player1_arrow').css({
+  left: ((window_width / 2) - player1_arrow_width - 350) + 'px'
+});
+jQuery('#player2_arrow').css({
+  left: ((window_width / 2) + 350) + 'px'
+});
 
 jQuery(function(){
 	geoip2.country(function(location) {
