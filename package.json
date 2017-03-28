@@ -1,10 +1,12 @@
-{ "name" : "pong", 
-"version" : "0.6.0",
-"repository" :
-  { "type" : "git"
-  , "url" : "http://github.com/german/pong.git"
-  },
-"dependencies" : 
-  { "socket.io" : "0.9.6", 
-    "node-static" : "0.7.6" } 
+{
+  "name": "pong", 
+  "version": "0.6.1",
+  "repository": {
+      "type": "git",
+      "url": "http://github.com/german/pong.git"
+    },
+  "dependencies": {
+    "socket.io" : "0.9.6", 
+    "node-static" : "0.7.6"
+  } 
 }
