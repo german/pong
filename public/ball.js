@@ -44,11 +44,6 @@ class Ball {
     }
 
     this.ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
- 
-    // window.player_shapes[0] == null for better addressation (player1, player2)
-    window.player_shapes[1].draw();
-    window.player_shapes[2].draw();
-
     this.ctx.beginPath();
       this.ctx.fillStyle = PLAYER_COLORS[window.player_id_having_the_ball];
 		  this.ctx.arc(this.current_x, this.current_y, BALL_DIAMETER, 0, Math.PI*2, false);

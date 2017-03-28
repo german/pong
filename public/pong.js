@@ -43,8 +43,12 @@ var start_round = function() {
 
   // we're setting timer which will sync position of the ball every TICK_INTERVAL ms
   bg_timer = setInterval(function() {
-    var info = {player_id: current_player_id, position_y: player_shapes[current_player_id].get_y_position(), room_id: window.room_id}
-    if(current_player_id == player_id_having_the_ball) {
+    var info = {
+      player_id: current_player_id,
+      position_y: player_shapes[current_player_id].get_y_position(),
+      room_id: window.room_id
+    }
+    if (current_player_id == player_id_having_the_ball) {
       var coords = ball.get_coordinates();
       info['ball_x'] = coords.ball_x;
       info['ball_y'] = coords.ball_y;
@@ -80,7 +84,11 @@ var finish_round = function(player_won) {
 var point_current_player_with_arrow = function() {
   jQuery('#player1_arrow').hide();
   jQuery('#player2_arrow').hide();
-  jQuery('#player' + current_player_id + '_arrow').show().animate({left: (current_player_id == 1 ? '+=100' : '-=100')}, 4000, 'easeOutBounce', function(){ jQuery('#player' + current_player_id + '_arrow').fadeOut(3000)});
+  jQuery(`#player${current_player_id}_arrow`).show().animate({
+    left: (current_player_id == 1 ? '+=100' : '-=100')
+  }, 4000, 'easeOutBounce', function(){
+    jQuery(`#player${current_player_id}_arrow`).fadeOut(3000)
+  });
 }
 
 // could be usefull if player #1 in some room reconnects to the other room
@@ -139,7 +147,11 @@ var set_keyboard_bindings_for = function(shape){
       if(current_player_id == player_id_having_the_ball && round_could_be_started) {
         start_round();
         var coords = ball.get_coordinates();
-        socket.json.emit('round_started', {room_id: window.room_id, ball_x: coords.ball_x, ball_y: coords.ball_y});
+        socket.json.emit('round_started', {
+          room_id: window.room_id,
+          ball_x: coords.ball_x,
+          ball_y: coords.ball_y
+        });
       }
     }
   });
@@ -247,10 +259,10 @@ socket.on('player_connected', function(obj){
   current_room_id = obj.room_id;
 
   if(obj.player1_country && !obj.player2_country) {
-    jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country.code + '.png" width="16" height="11" title="' + obj.player1_country.name + '" alt="' + obj.player1_country.name + '"/ >');
+    jQuery('#player1_flag').html(`<img src="country_icons/${obj.player1_country.code}.png" width="16" height="11" title="${obj.player1_country.name}" alt="${obj.player1_country.name}"/ >`);
   } else if(obj.player1_country && obj.player2_country) {
-    jQuery('#player1_flag').html('<img src="country_icons/' + obj.player1_country.code + '.png" width="16" height="11" title="' + obj.player1_country.name + '" alt="' + obj.player1_country.name + '"/ >');
-    jQuery('#player2_flag').html('<img src="country_icons/' + obj.player2_country.code + '.png" width="16" height="11" title="' + obj.player2_country.name + '" alt="' + obj.player2_country.name + '"/ >');
+    jQuery('#player1_flag').html(`<img src="country_icons/${obj.player1_country.code}.png" width="16" height="11" title="${obj.player1_country.name}" alt="${obj.player1_country.name}"/ >`);
+    jQuery('#player2_flag').html(`<img src="country_icons/${obj.player2_country.code}.png" width="16" height="11" title="${obj.player2_country.name}" alt="${obj.player2_country.name}"/ >`);
   }
   // and wait till 2nd user connects to the game  
 });
@@ -276,7 +288,9 @@ socket.on('round_could_be_started', function(obj){
     }
 
     jQuery.facebox('Round could be started: you could press spacebar to start!');
-    setTimeout(function() { jQuery.facebox.close() }, 3000); // automatically close the alert after 3 seconds
+
+    // automatically close the alert after 3 seconds
+    setTimeout(function() { jQuery.facebox.close() }, 3000);
   }
 });
 
