@@ -25,6 +25,8 @@ $ node server.js
 
 Finally open two browser windows and point both to http://localhost:8081
 
+<img width="1012" alt="Знімок екрана 2024-02-08 о 13 12 41" src="https://github.com/german/pong/assets/33149/b9d67624-56ce-47e7-9a6e-1f626ff6d6ce">
+
 Use 'Up' or 'Down' arrows to move your racket. Press Spacebar to start the round (only if two players are connected to the same room)
 
 Tested and works in Google Chrome and Firefox
