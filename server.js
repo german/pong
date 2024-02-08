@@ -1,21 +1,16 @@
 let http = require('http')
-  , static = require('node-static')
-  , server;
-    
-let file = new(static.Server)('./public');
+  , express = require('express')
+  , app = express()
+  , port = 8081; // (process.env.PORT || 8081);
 
-// since socket.io 0.7 consumes one socket we need another socket to transmit all static files from ./public dir
-server = http.createServer((req, res) => {
-  // all static files are served with https://github.com/cloudhead/node-static
-  req.addListener('end', () => {
-    file.serve(req, res);
-  }).resume();
-}).listen(8081);
-
+app.use(express.static(__dirname + '/public'));
+app.listen(port);
 
 // TODO make port configurable
 // if you going to change this you also will need to change port in the connection line in ./public/pong.js
-let io = require('socket.io/lib/socket.io').listen(8080);
+// let io = require('socket.io').listen(8080);
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
 
 let buffer = [], number_of_rooms = 10, rooms = [];
 
@@ -50,7 +45,7 @@ function find_room_and_disconnect_by_session_id(id) {
   }
 }
 
-io.sockets.on('connection', (socket) => {
+io.on('connection', (socket) => {
   socket.emit('list_of_rooms', get_list_of_rooms());  
   
   socket.on('disconnect', () => {
@@ -125,3 +120,5 @@ io.sockets.on('connection', (socket) => {
     io.sockets.json.emit('list_of_rooms', get_list_of_rooms());
   })
 });
+
+server.listen(8080);
