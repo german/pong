@@ -55,7 +55,7 @@ var start_round = function() {
       info['previous_x'] = coords.previous_x;
       info['previous_y'] = coords.previous_y;
     }
-    socket.json.emit('sync', info);
+    socket.emit('sync', info);
   }, TICK_INTERVAL);
 }
 
@@ -147,7 +147,7 @@ var set_keyboard_bindings_for = function(shape){
       if(current_player_id == player_id_having_the_ball && round_could_be_started) {
         start_round();
         var coords = ball.get_coordinates();
-        socket.json.emit('round_started', {
+        socket.emit('round_started', {
           room_id: window.room_id,
           ball_x: coords.ball_x,
           ball_y: coords.ball_y
@@ -191,7 +191,7 @@ var init = function() {
   set_keyboard_bindings_for(current_player_shape);
 }
 
-var socket = io.connect('http://localhost:8080');
+var socket = io();
 
 // messages could be of 6 types
 // 1. - 1st/2nd player connected
@@ -230,7 +230,7 @@ socket.on('list_of_rooms', function(obj){
 		if(typeof window.room_id != 'undefined') { 
 			$('#errors_for_list_of_rooms').hide();
 		
-			socket.json.emit('connect', {
+			socket.emit('connect_to_room', {
 				room_id: window.room_id, 
 				country_code: country_code.toLowerCase(),
 				country_name: country_name

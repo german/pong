@@ -56,11 +56,11 @@ io.on('connection', (socket) => {
       find_room_and_disconnect_by_session_id(socket.id);
       socket.leave(`room#${socket.room_id}`);
     }
-    io.sockets.json.emit('list_of_rooms', get_list_of_rooms());
+    io.sockets.emit('list_of_rooms', get_list_of_rooms());
   });
   
   socket.on('round_started', (msg) => {
-    io.sockets.in(`room#${msg.room_id}`).json.emit('round_started', msg);
+    io.sockets.in(`room#${msg.room_id}`).emit('round_started', msg);
   });
   
   socket.on('sync', (msg) => {
@@ -70,14 +70,14 @@ io.on('connection', (socket) => {
   socket.on('end_of_the_round', (msg) => {
     // player that lost now has the ball
     rooms[msg.room_id].player_id_having_the_ball = (msg.player_won == 1 ? 2 : 1);
-    io.sockets.in(`room#${msg.room_id}`).json.emit("end_of_the_round", {
+    io.sockets.in(`room#${msg.room_id}`).emit("end_of_the_round", {
       player_won: msg.player_won,
       player_id_having_the_ball: rooms[msg.room_id].player_id_having_the_ball,
       room_id: msg.room_id
     });
   });
         
-  socket.on('connect', (msg) => {
+  socket.on('connect_to_room', (msg) => {
     socket.join(`room#${msg.room_id}`);
     socket.room_id = msg.room_id;
     find_room_and_disconnect_by_session_id(socket.id);
@@ -98,7 +98,7 @@ io.on('connection', (socket) => {
     // check whether this connected user was not connected
     // to the other room on the same server
     if (rooms[msg.room_id].count == 1) {
-      socket.json.emit('player_connected', {
+      socket.emit('player_connected', {
         player_id: 1,
         room_id: msg.room_id,
         player1_country: rooms[msg.room_id].player1_country
@@ -106,18 +106,18 @@ io.on('connection', (socket) => {
     } else if (rooms[msg.room_id].count == 2) {
       // when second player has connected, 1st player could had moved up 
       // or down his default position, so show him right cordinates in buffer variable
-      io.sockets.in(`room#${msg.room_id}`).json.emit('player_connected', {
+      io.sockets.in(`room#${msg.room_id}`).emit('player_connected', {
         player_id: 2,
         room_id: msg.room_id,
         player1_country: rooms[msg.room_id].player1_country,
         player2_country: rooms[msg.room_id].player2_country
       });
-      io.sockets.in(`room#${msg.room_id}`).json.emit('round_could_be_started', {
+      io.sockets.in(`room#${msg.room_id}`).emit('round_could_be_started', {
         room_id: socket.room_id
       });
     }
     
-    io.sockets.json.emit('list_of_rooms', get_list_of_rooms());
+    io.sockets.emit('list_of_rooms', get_list_of_rooms());
   })
 });
 
