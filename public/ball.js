@@ -82,14 +82,13 @@ class Ball {
       this.previous_x = SHAPE_WIDTH;
       this.current_x = SHAPE_WIDTH - dx;
     }
-    //console.log('ball timer - [' + current_x + ', ' + current_y + ']');
 
     // if the ball goes out of the console
     if (this.current_x > CANVAS_WIDTH || this.current_x < 0 ) {
       const player_won = (this.current_x > CANVAS_WIDTH) ? 1 : 2;
       window.player_id_having_the_ball = (player_won == 1) ? 2 : 1;
       finish_round(player_won);
-      socket.json.emit("end_of_the_round", {
+      socket.emit("end_of_the_round", {
         player_won: player_won,
         room_id: window.room_id
       });
