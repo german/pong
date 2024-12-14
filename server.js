@@ -1,21 +1,19 @@
-let http = require('http')
-  , express = require('express')
-  , app = express()
-  , port = 8081; // (process.env.PORT || 8081);
+const express = require('express');
+const { createServer } = require('node:http');
+const { join } = require('node:path');
 
-app.use(express.static(__dirname + '/public'));
-app.listen(port);
+const app = express();
+const server = createServer(app);
 
-// TODO make port configurable
-// if you going to change this you also will need to change port in the connection line in ./public/pong.js
-// let io = require('socket.io').listen(8080);
-const server = require('http').createServer(app);
-const io = require('socket.io')(server);
+app.use(express.static('public'));
+
+const { Server } = require('socket.io');
+const io = new Server(server);
 
 let buffer = [], number_of_rooms = 10, rooms = [];
 
 for (let i = 0; i < number_of_rooms; i++) {
-  rooms[i] = {count: 0, player_id_having_the_ball: 1}; //, round_started: false};
+  rooms[i] = {count: 0, player_id_having_the_ball: 1};
 }
 
 function get_list_of_rooms() {
@@ -121,4 +119,6 @@ io.on('connection', (socket) => {
   })
 });
 
-server.listen(8080);
+server.listen(8080, () => {
+  console.log('server running at http://localhost:8080');
+});
