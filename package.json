@@ -1,12 +1,12 @@
 {
-  "name": "pong", 
+  "name": "pong",
   "version": "0.7",
   "repository": {
-      "type": "git",
-      "url": "http://github.com/german/pong.git"
-    },
+    "type": "git",
+    "url": "http://github.com/german/pong.git"
+  },
   "dependencies": {
-    "socket.io" : "4.7.4", 
-    "express" : "4.18.2"
-  } 
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
 }
